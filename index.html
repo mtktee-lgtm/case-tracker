@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>รายได้เคส + วางแผนภาษี</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;
+  --text:#1a1a18;--text2:#6b6b66;--text3:#aaa;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --r:8px;--rl:12px;
+  --teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#0F6E56;
+  --coral:#D85A30;--coral-lt:#FAECE7;--coral-dk:#993C1D;
+  --amber:#BA7517;--amber-lt:#FAEEDA;--amber-dk:#633806;
+  --purple:#534AB7;--purple-lt:#EEEDFE;
+  --blue:#185FA5;--blue-lt:#E6F1FB;
+  --green:#3B6D11;--green-lt:#EAF3DE;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0ede8;--text2:#999;--text3:#555;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+  --teal-lt:#0a3d2a;--coral-lt:#3d1a0a;--amber-lt:#3d2a08;--purple-lt:#1e1a47;--blue-lt:#06203d;--green-lt:#1a2e08;}
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;padding-bottom:80px}
+header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:14px 16px;position:sticky;top:0;z-index:20}
+.header-row{display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:15px;font-weight:500}
+.header-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.badge-warn{background:var(--coral-lt);color:var(--coral-dk)}
+.badge-ok{background:var(--teal-lt);color:var(--teal-dk)}
+
+.tabs{display:flex;background:var(--bg);border-bottom:0.5px solid var(--border);position:sticky;top:57px;z-index:10}
+.tab{flex:1;padding:11px 2px;font-size:11px;text-align:center;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent}
+.tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+
+.section{display:none;padding:14px 14px 0}.section.active{display:block}
+
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.metric{background:var(--bg);border-radius:var(--r);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--text2);margin-bottom:3px}
+.metric-value{font-size:18px;font-weight:500}
+.metric-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.metric-full{grid-column:1/-1}
+
+.card{background:var(--bg);border-radius:var(--rl);padding:14px 16px;margin-bottom:12px;border:0.5px solid var(--border)}
+.card-title{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:12px}
+
+.form-group{margin-bottom:10px}
+.form-group label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:14px;outline:none;font-family:inherit}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.toggle-group{display:grid;gap:6px;margin-bottom:10px}
+.toggle-group.col2{grid-template-columns:1fr 1fr}
+.toggle-group.col4{grid-template-columns:repeat(4,1fr)}
+.tgl-btn{padding:9px 4px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:12px;cursor:pointer;text-align:center;line-height:1.3}
+.tgl-btn.sel-normal{background:var(--teal-lt);color:var(--teal-dk);border-color:var(--teal)}
+.tgl-btn.sel-package{background:var(--amber-lt);color:var(--amber-dk);border-color:var(--amber)}
+.tgl-btn.sel-oncall{background:var(--purple-lt);color:var(--purple);border-color:var(--purple)}
+.tgl-btn.sel-other{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+
+.notice{border-radius:var(--r);padding:8px 12px;font-size:12px;margin-bottom:10px;border:0.5px solid}
+.notice-oncall{background:var(--purple-lt);color:var(--purple);border-color:var(--purple)}
+
+.btn-row{display:flex;gap:8px;margin-top:4px}
+.btn{flex:1;padding:12px;border-radius:var(--r);border:none;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-primary{background:var(--teal-lt);color:var(--teal-dk)}
+.btn-sec{background:var(--bg2);color:var(--text2);border:0.5px solid var(--border2)}
+
+.month-nav{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.month-nav button{background:none;border:0.5px solid var(--border);border-radius:var(--r);width:30px;height:30px;cursor:pointer;color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.month-label{font-size:14px;font-weight:500;flex:1;text-align:center}
+
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filter-btn{padding:5px 12px;border-radius:20px;border:0.5px solid var(--border);background:none;font-size:12px;cursor:pointer;color:var(--text2)}
+.filter-btn.active{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+
+.case-list{display:flex;flex-direction:column;gap:8px}
+.case-item{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--border);padding:12px 14px}
+.case-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.chip-normal{background:var(--teal-lt);color:var(--teal-dk)}
+.chip-package{background:var(--amber-lt);color:var(--amber-dk)}
+.chip-oncall{background:var(--purple-lt);color:var(--purple)}
+.chip-other{background:var(--bg2);color:var(--text2)}
+.case-date{font-size:11px;color:var(--text3)}
+.case-amount{font-size:18px;font-weight:500;color:var(--teal)}
+.case-travel{font-size:11px;color:var(--purple);margin-top:1px}
+.case-note{font-size:12px;color:var(--text2);margin-top:4px}
+.case-actions{display:flex;gap:6px;margin-top:10px;border-top:0.5px solid var(--border);padding-top:8px}
+.act-btn{flex:1;padding:7px 4px;border-radius:var(--r);border:0.5px solid var(--border);background:none;font-size:11px;cursor:pointer;color:var(--text2)}
+.act-btn.danger{color:var(--coral-dk);border-color:var(--coral-lt)}
+
+.stat-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.stat-item:last-child{border-bottom:none}
+.stat-name{font-size:13px}
+.stat-detail{font-size:11px;color:var(--text2);margin-top:2px}
+.stat-amt{font-size:14px;font-weight:500;color:var(--teal)}
+.chart-wrap{position:relative;width:100%;height:180px;margin-top:8px}
+
+/* TAX PLANNING */
+.tax-section{margin-bottom:16px}
+.tax-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.tax-row:last-child{border-bottom:none}
+.tax-label{color:var(--text2)}
+.tax-value{font-weight:500}
+.tax-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:15px;font-weight:500;border-top:1px solid var(--border2);margin-top:4px}
+.deduct-item{margin-bottom:10px}
+.deduct-item label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+.deduct-item input{width:100%;padding:9px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:14px;outline:none;font-family:inherit;text-align:right}
+.deduct-max{font-size:10px;color:var(--text3);margin-top:2px}
+.tax-result-big{text-align:center;padding:16px;background:var(--coral-lt);border-radius:var(--r);margin-bottom:12px}
+.tax-result-big .label{font-size:12px;color:var(--coral-dk);margin-bottom:4px}
+.tax-result-big .value{font-size:28px;font-weight:500;color:var(--coral-dk)}
+.tax-result-big .sub{font-size:11px;color:var(--coral-dk);opacity:0.8;margin-top:4px}
+.tax-saved{text-align:center;padding:12px;background:var(--teal-lt);border-radius:var(--r);margin-bottom:12px}
+.tax-saved .label{font-size:12px;color:var(--teal-dk);margin-bottom:4px}
+.tax-saved .value{font-size:22px;font-weight:500;color:var(--teal-dk)}
+.recommend-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.recommend-item:last-child{border-bottom:none}
+.rec-name{font-weight:500}
+.rec-detail{font-size:11px;color:var(--text2);margin-top:2px}
+.rec-amt{color:var(--green);font-weight:500;white-space:nowrap;margin-left:8px}
+.progress-bar{height:6px;background:var(--bg2);border-radius:3px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.4s}
+
+.year-nav{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.year-nav button{background:none;border:0.5px solid var(--border);border-radius:var(--r);width:30px;height:30px;cursor:pointer;color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center}
+.year-label{font-size:14px;font-weight:500;flex:1;text-align:center}
+
+.empty{text-align:center;color:var(--text3);font-size:13px;padding:40px 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--teal);color:#fff;padding:10px 24px;border-radius:24px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+
+.section-label{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:4px}
+.divider{height:0.5px;background:var(--border);margin:12px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div>
+      <h1>รายได้เคส + ภาษี</h1>
+      <div class="header-sub" id="hdr-sub">ระบบติดตามรายได้และวางแผนภาษี</div>
+    </div>
+    <div id="hdr-badge"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('overview')">ภาพรวม</button>
+  <button class="tab" onclick="switchTab('add')">บันทึก</button>
+  <button class="tab" onclick="switchTab('history')">รายการ</button>
+  <button class="tab" onclick="switchTab('tax')">ภาษี</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="tab-overview" class="section active">
+  <div class="month-nav" style="margin-bottom:8px">
+    <button onclick="changeMonth(-1)">‹</button>
+    <div class="month-label" id="ov-month-lbl"></div>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">เคสเดือนนี้</div><div class="metric-value" id="ov-count">0</div><div class="metric-sub">รายการ</div></div>
+    <div class="metric"><div class="metric-label">รายได้รวม</div><div class="metric-value" id="ov-total" style="color:var(--teal)">฿0</div><div class="metric-sub">เดือนนี้</div></div>
+    <div class="metric metric-full"><div class="metric-label">รายได้สะสมปีนี้ (ประมาณการ)</div><div class="metric-value" id="ov-ytd" style="color:var(--teal)">฿0</div><div class="metric-sub" id="ov-ytd-sub"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">แยกตามประเภทเคส — <span id="ov-type-month"></span></div>
+    <div id="ov-type-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">รายได้รายเดือน (12 เดือนล่าสุด)</div>
+    <div class="chart-wrap"><canvas id="monthChart" role="img" aria-label="กราฟรายได้รายเดือน">กราฟ</canvas></div>
+  </div>
+</div>
+
+<!-- ADD -->
+<div id="tab-add" class="section">
+  <div class="card">
+    <div class="card-title">ประเภทเคส</div>
+    <div class="toggle-group col4" id="type-toggle">
+      <button class="tgl-btn sel-normal" data-type="normal" onclick="setType(this)">ปกติ</button>
+      <button class="tgl-btn" data-type="package" onclick="setType(this)">แพคเกจ<br>เหมา</button>
+      <button class="tgl-btn" data-type="oncall" onclick="setType(this)">เวร<br>นอกเวลา</button>
+      <button class="tgl-btn" data-type="other" onclick="setType(this)">อื่นๆ</button>
+    </div>
+    <div class="notice notice-oncall" id="notice-oncall" style="display:none">เวรนอกเวลา — บวกค่าเดินทาง ฿2,000 อัตโนมัติ</div>
+  </div>
+  <div class="card">
+    <div class="form-group">
+      <label>ค่าตอบแทน (บาท)</label>
+      <input type="number" id="f-amount" placeholder="0" min="0" inputmode="numeric">
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>วันที่ทำเคส</label><input type="date" id="f-date"></div>
+      <div class="form-group">
+        <label>หมายเหตุ</label>
+        <input type="text" id="f-note" placeholder="เช่น คลอด...">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addCase()">บันทึกเคส</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div id="tab-history" class="section">
+  <div class="month-nav">
+    <button onclick="changeMonth(-1)">‹</button>
+    <div class="month-label" id="hist-month-lbl"></div>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter(this,'all')">ทั้งหมด</button>
+    <button class="filter-btn" onclick="setFilter(this,'normal')">ปกติ</button>
+    <button class="filter-btn" onclick="setFilter(this,'package')">แพคเกจ</button>
+    <button class="filter-btn" onclick="setFilter(this,'oncall')">เวร</button>
+  </div>
+  <div id="case-list" class="case-list"></div>
+</div>
+
+<!-- TAX PLANNING -->
+<div id="tab-tax" class="section">
+  <div class="year-nav">
+    <button onclick="changeYear(-1)">‹</button>
+    <div class="year-label" id="tax-year-lbl"></div>
+    <button onclick="changeYear(1)">›</button>
+  </div>
+
+  <div id="tax-result-box" class="tax-result-big">
+    <div class="label">ภาษีที่ต้องจ่าย (ประมาณการ)</div>
+    <div class="value" id="tax-due">฿0</div>
+    <div class="sub" id="tax-rate-lbl">อัตราภาษีสูงสุด 0%</div>
+  </div>
+
+  <div id="tax-saved-box" class="tax-saved" style="display:none">
+    <div class="label">ประหยัดภาษีได้จากลดหย่อน</div>
+    <div class="value" id="tax-saved-val">฿0</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">รายได้และค่าใช้จ่าย (40(6))</div>
+    <div class="tax-row"><span class="tax-label">รายได้จากเคสปีนี้</span><span class="tax-value" id="tx-income">฿0</span></div>
+    <div class="tax-row"><span class="tax-label">หักค่าใช้จ่าย 60% (สูงสุด ฿300,000)</span><span class="tax-value" id="tx-expense">฿0</span></div>
+    <div class="tax-row"><span class="tax-label">หักลดหย่อนส่วนตัว</span><span class="tax-value">฿60,000</span></div>
+    <div class="divider"></div>
+    <div class="section-label">ใส่ลดหย่อนที่มี</div>
+
+    <div class="deduct-item">
+      <label>ลดหย่อนบุตร (2 คน)</label>
+      <input type="number" id="d-child" value="90000" inputmode="numeric" oninput="calcTax()">
+      <div class="deduct-max">ลูกปี 59 = ฿30,000 + ลูกปี 61 = ฿60,000 (รวม ฿90,000)</div>
+    </div>
+    <div class="deduct-item">
+      <label>ประกันชีวิต (สูงสุด ฿100,000)</label>
+      <input type="number" id="d-life" placeholder="0" inputmode="numeric" oninput="calcTax()">
+      <div class="deduct-max" id="d-life-bar"></div>
+    </div>
+    <div class="deduct-item">
+      <label>ประกันสุขภาพ (สูงสุด ฿25,000)</label>
+      <input type="number" id="d-health" placeholder="0" inputmode="numeric" oninput="calcTax()">
+    </div>
+    <div class="deduct-item">
+      <label>ดอกเบี้ยบ้าน (สูงสุด ฿100,000)</label>
+      <input type="number" id="d-home" placeholder="0" inputmode="numeric" oninput="calcTax()">
+    </div>
+    <div class="deduct-item">
+      <label>RMF (สูงสุด 30% รายได้ / ฿500,000)</label>
+      <input type="number" id="d-rmf" placeholder="0" inputmode="numeric" oninput="calcTax()">
+      <div class="deduct-max" id="d-rmf-max"></div>
+    </div>
+    <div class="deduct-item">
+      <label>SSF (สูงสุด 30% รายได้ / ฿200,000)</label>
+      <input type="number" id="d-ssf" placeholder="0" inputmode="numeric" oninput="calcTax()">
+    </div>
+    <div class="deduct-item">
+      <label>กองทุนการออมแห่งชาติ / อื่นๆ</label>
+      <input type="number" id="d-other" placeholder="0" inputmode="numeric" oninput="calcTax()">
+    </div>
+
+    <div class="divider"></div>
+    <div class="tax-row"><span class="tax-label">รายได้สุทธิ</span><span class="tax-value" id="tx-net">฿0</span></div>
+    <div class="tax-total-row"><span>ภาษีที่ต้องจ่าย</span><span id="tx-total" style="color:var(--coral)">฿0</span></div>
+  </div>
+
+  <div class="card" id="recommend-card">
+    <div class="card-title">แนะนำลดหย่อนเพิ่ม (ที่ยังใช้ไม่เต็ม)</div>
+    <div id="recommend-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">อัตราภาษีเงินได้บุคคลธรรมดา 2567</div>
+    <div class="tax-row"><span class="tax-label">0 – 150,000</span><span class="tax-value">ยกเว้น</span></div>
+    <div class="tax-row"><span class="tax-label">150,001 – 300,000</span><span class="tax-value">5%</span></div>
+    <div class="tax-row"><span class="tax-label">300,001 – 500,000</span><span class="tax-value">10%</span></div>
+    <div class="tax-row"><span class="tax-label">500,001 – 750,000</span><span class="tax-value">15%</span></div>
+    <div class="tax-row"><span class="tax-label">750,001 – 1,000,000</span><span class="tax-value">20%</span></div>
+    <div class="tax-row"><span class="tax-label">1,000,001 – 2,000,000</span><span class="tax-value">25%</span></div>
+    <div class="tax-row"><span class="tax-label">2,000,001 – 5,000,000</span><span class="tax-value">30%</span></div>
+    <div class="tax-row"><span class="tax-label">5,000,001 ขึ้นไป</span><span class="tax-value">35%</span></div>
+  </div>
+
+  <p style="font-size:11px;color:var(--text3);text-align:center;padding-bottom:16px">* ประมาณการเบื้องต้น ควรปรึกษานักบัญชีก่อนยื่นจริง</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TYPE_LBL={normal:'ปกติ',package:'แพคเกจ/เหมา',oncall:'เวรนอกเวลา',other:'อื่นๆ'};
+const TYPE_CLS={normal:'chip-normal',package:'chip-package',oncall:'chip-oncall',other:'chip-other'};
+const ONCALL_TRAVEL=2000;
+const TAX_BRACKETS=[
+  {min:0,max:150000,rate:0},
+  {min:150000,max:300000,rate:0.05},
+  {min:300000,max:500000,rate:0.10},
+  {min:500000,max:750000,rate:0.15},
+  {min:750000,max:1000000,rate:0.20},
+  {min:1000000,max:2000000,rate:0.25},
+  {min:2000000,max:5000000,rate:0.30},
+  {min:5000000,max:Infinity,rate:0.35},
+];
+
+function calcProgressiveTax(net){
+  let tax=0;
+  for(const b of TAX_BRACKETS){
+    if(net<=b.min)break;
+    tax+=(Math.min(net,b.max)-b.min)*b.rate;
+  }
+  return Math.round(tax);
+}
+
+let cases=JSON.parse(localStorage.getItem('mtk_cases_v3')||'[]');
+let viewMonth=new Date();viewMonth.setDate(1);
+let taxYear=new Date().getFullYear();
+let activeType='normal';
+let activeFilter='all';
+let monthChartInst=null;
+
+function save(){localStorage.setItem('mtk_cases_v3',JSON.stringify(cases));}
+function fmt(n){return '฿'+Math.round(n).toLocaleString('th-TH');}
+function fmtN(n){return Math.round(n).toLocaleString('th-TH');}
+function monthKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function monthLabel(d){const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return m[d.getMonth()]+' '+(d.getFullYear()+543);}
+function getCasesMonth(d){const k=monthKey(d);return cases.filter(c=>c.date.startsWith(k));}
+function getCasesYear(y){return cases.filter(c=>c.date.startsWith(y+'-'));}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',2200);}
+
+function updateHeader(){
+  const ytd=getCasesYear(new Date().getFullYear()).reduce((s,c)=>s+c.totalAmount,0);
+  document.getElementById('hdr-sub').textContent='รายได้ปีนี้ (ประมาณการ) '+fmt(ytd);
+  const tax=quickTaxEstimate(ytd);
+  const el=document.getElementById('hdr-badge');
+  el.innerHTML=tax>0?`<span class="badge badge-warn">ภาษี ~${fmt(tax)}</span>`:`<span class="badge badge-ok">ยังไม่มีข้อมูล</span>`;
+}
+
+function quickTaxEstimate(income){
+  const expense=Math.min(income*0.6,300000);
+  const personal=60000;
+  const net=Math.max(0,income-expense-personal);
+  return calcProgressiveTax(net);
+}
+
+function setType(btn){
+  activeType=btn.dataset.type;
+  document.querySelectorAll('#type-toggle .tgl-btn').forEach(b=>b.className='tgl-btn'+(b===btn?' sel-'+activeType:''));
+  document.getElementById('notice-oncall').style.display=activeType==='oncall'?'block':'none';
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','add','history','tax'][i]===name));
+  document.querySelectorAll('.section').forEach((el,i)=>el.classList.toggle('active',['tab-overview','tab-add','tab-history','tab-tax'][i]==='tab-'+name));
+  if(name==='overview')renderOverview();
+  if(name==='history')renderHistory();
+  if(name==='tax')calcTax();
+  if(name==='add')document.getElementById('f-date').value=todayStr();
+}
+
+function addCase(){
+  const amount=parseFloat(document.getElementById('f-amount').value)||0;
+  const date=document.getElementById('f-date').value;
+  const note=document.getElementById('f-note').value.trim();
+  if(!amount||!date){alert('กรุณากรอกค่าตอบแทนและวันที่');return;}
+  const travel=activeType==='oncall'?ONCALL_TRAVEL:0;
+  const totalAmount=amount+travel;
+  cases.unshift({id:Date.now(),type:activeType,amount,travel,totalAmount,date,note});
+  save();
+  document.getElementById('f-amount').value='';
+  document.getElementById('f-note').value='';
+  showToast('บันทึก '+TYPE_LBL[activeType]+' '+fmt(totalAmount)+' แล้ว ✓');
+  updateHeader();
+  switchTab('history');
+}
+
+function deleteCase(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  cases=cases.filter(c=>c.id!==id);save();renderHistory();renderOverview();updateHeader();
+}
+
+function changeMonth(d){viewMonth.setMonth(viewMonth.getMonth()+d);renderOverview();renderHistory();}
+function changeYear(d){taxYear+=d;document.getElementById('tax-year-lbl').textContent='ปี '+(taxYear+543);calcTax();}
+
+function setFilter(btn,f){
+  activeFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(el=>el.classList.remove('active'));
+  btn.classList.add('active');
+  renderHistory();
+}
+
+function renderOverview(){
+  const txs=getCasesMonth(viewMonth);
+  document.getElementById('ov-month-lbl').textContent=monthLabel(viewMonth);
+  document.getElementById('ov-type-month').textContent=monthLabel(viewMonth);
+  document.getElementById('ov-count').textContent=txs.length;
+  const monthTotal=txs.reduce((s,c)=>s+c.totalAmount,0);
+  document.getElementById('ov-total').textContent=fmt(monthTotal);
+
+  const ytdCases=getCasesYear(viewMonth.getFullYear());
+  const ytd=ytdCases.reduce((s,c)=>s+c.totalAmount,0);
+  document.getElementById('ov-ytd').textContent=fmt(ytd);
+  const taxEst=quickTaxEstimate(ytd);
+  document.getElementById('ov-ytd-sub').textContent='ประมาณการภาษี ~'+fmt(taxEst);
+
+  const typeMap={};
+  txs.forEach(c=>{if(!typeMap[c.type])typeMap[c.type]={total:0,count:0};typeMap[c.type].total+=c.totalAmount;typeMap[c.type].count++;});
+  const entries=Object.entries(typeMap).sort((a,b)=>b[1].total-a[1].total);
+  document.getElementById('ov-type-list').innerHTML=entries.length===0?'<div class="empty">ยังไม่มีเคสเดือนนี้</div>':
+    entries.map(([t,v])=>`<div class="stat-item"><div><div><span class="chip ${TYPE_CLS[t]}">${TYPE_LBL[t]}</span></div><div class="stat-detail" style="margin-top:4px">${v.count} เคส</div></div><div class="stat-amt">${fmt(v.total)}</div></div>`).join('');
+
+  const labels=[],totals=[];
+  for(let i=11;i>=0;i--){const d=new Date(viewMonth.getFullYear(),viewMonth.getMonth()-i,1);labels.push(monthLabel(d));totals.push(getCasesMonth(d).reduce((s,c)=>s+c.totalAmount,0));}
+  const ctx=document.getElementById('monthChart').getContext('2d');
+  if(monthChartInst)monthChartInst.destroy();
+  monthChartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'รายได้',data:totals,backgroundColor:'#5DCAA5',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{callback:v=>'฿'+Math.round(v/1000)+'K',font:{size:9}}}}}});
+}
+
+function renderHistory(){
+  document.getElementById('hist-month-lbl').textContent=monthLabel(viewMonth);
+  let txs=getCasesMonth(viewMonth).sort((a,b)=>b.date.localeCompare(a.date));
+  if(activeFilter!=='all')txs=txs.filter(c=>c.type===activeFilter);
+  document.getElementById('case-list').innerHTML=txs.length===0?'<div class="empty">ไม่มีรายการ</div>':
+    txs.map(c=>`
+      <div class="case-item">
+        <div class="case-top">
+          <div class="chips"><span class="chip ${TYPE_CLS[c.type]}">${TYPE_LBL[c.type]}</span></div>
+          <span class="case-date">${c.date}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <div>
+            <div class="case-amount">${fmt(c.totalAmount)}</div>
+            ${c.travel>0?`<div class="case-travel">รวมค่าเดินทาง +${fmt(c.travel)}</div>`:''}
+            ${c.note?`<div class="case-note">${c.note}</div>`:''}
+          </div>
+        </div>
+        <div class="case-actions">
+          <button class="act-btn danger" onclick="deleteCase(${c.id})">ลบ</button>
+        </div>
+      </div>`).join('');
+}
+
+function calcTax(){
+  const income=getCasesYear(taxYear).reduce((s,c)=>s+c.totalAmount,0);
+  const expense=Math.min(income*0.6,300000);
+  const personal=60000;
+  const childDeduct=Math.min(parseFloat(document.getElementById('d-child').value)||0,90000);
+  const life=Math.min(parseFloat(document.getElementById('d-life').value)||0,100000);
+  const health=Math.min(parseFloat(document.getElementById('d-health').value)||0,25000);
+  const home=Math.min(parseFloat(document.getElementById('d-home').value)||0,100000);
+  const rmfMax=Math.min(income*0.30,500000);
+  const ssfMax=Math.min(income*0.30,200000);
+  const rmf=Math.min(parseFloat(document.getElementById('d-rmf').value)||0,rmfMax);
+  const ssf=Math.min(parseFloat(document.getElementById('d-ssf').value)||0,ssfMax);
+  const other=parseFloat(document.getElementById('d-other').value)||0;
+
+  document.getElementById('d-rmf-max').textContent='สูงสุดของคุณ: '+fmt(rmfMax);
+
+  const totalDeduct=personal+childDeduct+life+health+home+rmf+ssf+other;
+  const netIncome=Math.max(0,income-expense-totalDeduct);
+  const taxDue=calcProgressiveTax(netIncome);
+  const taxWithout=calcProgressiveTax(Math.max(0,income-expense-personal));
+  const taxSaved=taxWithout-taxDue;
+
+  document.getElementById('tx-income').textContent=fmt(income);
+  document.getElementById('tx-expense').textContent=fmt(expense);
+  document.getElementById('tx-net').textContent=fmt(netIncome);
+  document.getElementById('tx-total').textContent=fmt(taxDue);
+  document.getElementById('tax-due').textContent=fmt(taxDue);
+  document.getElementById('tax-year-lbl').textContent='ปี '+(taxYear+543);
+
+  const topRate=TAX_BRACKETS.find(b=>netIncome>b.min&&netIncome<=b.max)||TAX_BRACKETS[TAX_BRACKETS.length-1];
+  document.getElementById('tax-rate-lbl').textContent='อัตราภาษีสูงสุด '+(topRate.rate*100)+'% · รายได้สุทธิ '+fmt(netIncome);
+
+  const savedBox=document.getElementById('tax-saved-box');
+  if(taxSaved>0){savedBox.style.display='block';document.getElementById('tax-saved-val').textContent=fmt(taxSaved);}
+  else savedBox.style.display='none';
+
+  // Recommendations
+  const recs=[];
+  if(life<100000)recs.push({name:'ประกันชีวิต',detail:'ใช้ไป '+fmt(life)+' / สูงสุด ฿100,000',remaining:100000-life,saving:Math.round((100000-life)*0.30)});
+  if(health<25000)recs.push({name:'ประกันสุขภาพ',detail:'ใช้ไป '+fmt(health)+' / สูงสุด ฿25,000',remaining:25000-health,saving:Math.round((25000-health)*0.30)});
+  if(home<100000)recs.push({name:'ดอกเบี้ยบ้าน',detail:'ใช้ไป '+fmt(home)+' / สูงสุด ฿100,000',remaining:100000-home,saving:Math.round((100000-home)*0.30)});
+  if(rmf<rmfMax)recs.push({name:'RMF',detail:'ใช้ไป '+fmt(rmf)+' / สูงสุด '+fmt(rmfMax),remaining:rmfMax-rmf,saving:Math.round((rmfMax-rmf)*0.30)});
+  if(ssf<ssfMax)recs.push({name:'SSF',detail:'ใช้ไป '+fmt(ssf)+' / สูงสุด '+fmt(ssfMax),remaining:ssfMax-ssf,saving:Math.round((ssfMax-ssf)*0.30)});
+  recs.sort((a,b)=>b.saving-a.saving);
+
+  const recCard=document.getElementById('recommend-card');
+  const recList=document.getElementById('recommend-list');
+  if(recs.length===0||income===0){recCard.style.display='none';}
+  else{
+    recCard.style.display='block';
+    recList.innerHTML=recs.map(r=>`
+      <div class="recommend-item">
+        <div>
+          <div class="rec-name">${r.name}</div>
+          <div class="rec-detail">${r.detail}</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.round((1-r.remaining/(r.remaining+(r.name==='RMF'?rmf:r.name==='SSF'?ssf:r.name==='ประกันชีวิต'?life:r.name==='ประกันสุขภาพ'?health:home)))*100)}%;background:var(--teal)"></div></div>
+        </div>
+        <div class="rec-amt">ประหยัดได้<br>~${fmt(r.saving)}</div>
+      </div>`).join('');
+  }
+}
+
+// init
+
+// Preload historical data if not already loaded
+(function() {
+  const existing = JSON.parse(localStorage.getItem('mtk_cases_v3') || '[]');
+  const PRELOAD = [{"id": 1700000001000, "type": "oncall", "amount": 19000, "travel": 2000, "totalAmount": 21000, "date": "2025-01-05", "note": "arthroscope knee"}, {"id": 1700000001001, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-01-06", "note": "egd colono"}, {"id": 1700000001002, "type": "oncall", "amount": 16000, "travel": 2000, "totalAmount": 18000, "date": "2025-01-06", "note": "ORIF ankle คนท้อง"}, {"id": 1700000001003, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-01-07", "note": "c/s"}, {"id": 1700000001004, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-01-07", "note": "lap so c cystectomy"}, {"id": 1700000001005, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-01-07", "note": "egd colono"}, {"id": 1700000001006, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-01-07", "note": "hemorrhoid"}, {"id": 1700000001007, "type": "normal", "amount": 8000, "travel": 0, "totalAmount": 8000, "date": "2025-01-07", "note": "perianal I&D"}, {"id": 1700000001008, "type": "normal", "amount": 5500, "travel": 0, "totalAmount": 5500, "date": "2025-01-07", "note": "egd colono"}, {"id": 1700000001009, "type": "oncall", "amount": 8500, "travel": 2000, "totalAmount": 10500, "date": "2025-01-07", "note": "glutal abscess"}, {"id": 1700000001010, "type": "normal", "amount": 4000, "travel": 0, "totalAmount": 4000, "date": "2025-01-08", "note": "LP"}, {"id": 1700000001011, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-01-09", "note": "c/s"}, {"id": 1700000001012, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-01-09", "note": "c/s"}, {"id": 1700000001013, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-01-09", "note": "colono"}, {"id": 1700000001014, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-01-09", "note": "egd colono"}, {"id": 1700000001015, "type": "normal", "amount": 6500, "travel": 0, "totalAmount": 6500, "date": "2025-01-09", "note": "hysteroscope"}, {"id": 1700000001016, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-01-09", "note": "hemorrhoid"}, {"id": 1700000001017, "type": "normal", "amount": 13000, "travel": 0, "totalAmount": 13000, "date": "2025-01-09", "note": "LC"}, {"id": 1700000001018, "type": "oncall", "amount": 30000, "travel": 2000, "totalAmount": 32000, "date": "2025-01-09", "note": "Endospine sx TLIF"}, {"id": 1700000001019, "type": "oncall", "amount": 5000, "travel": 2000, "totalAmount": 7000, "date": "2025-01-13", "note": "egd bedside ICU"}, {"id": 1700000001020, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-01-13", "note": "egd"}, {"id": 1700000001021, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-01-13", "note": "lap appendix"}, {"id": 1700000001022, "type": "normal", "amount": 8250, "travel": 0, "totalAmount": 8250, "date": "2025-01-13", "note": "lap cystec"}, {"id": 1700000001023, "type": "normal", "amount": 10000, "travel": 0, "totalAmount": 10000, "date": "2025-01-14", "note": "Open reduction เด็ก"}, {"id": 1700000001024, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-01-14", "note": "egd colono"}, {"id": 1700000001025, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-01-14", "note": "EUS"}, {"id": 1700000001026, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-01-14", "note": "egd"}, {"id": 1700000001027, "type": "normal", "amount": 5500, "travel": 0, "totalAmount": 5500, "date": "2025-01-14", "note": "lap cystec"}, {"id": 1700000001028, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-01-14", "note": "open myomec"}, {"id": 1700000001029, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-01-14", "note": "colono"}, {"id": 1700000001030, "type": "oncall", "amount": 16000, "travel": 2000, "totalAmount": 18000, "date": "2025-01-14", "note": "TKA"}, {"id": 1700000001031, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-01-15", "note": "egd"}, {"id": 1700000001032, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-01-15", "note": "TAH"}, {"id": 1700000001033, "type": "normal", "amount": 6500, "travel": 0, "totalAmount": 6500, "date": "2025-01-15", "note": "MVA active bleed"}, {"id": 1700000001034, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-01-16", "note": "egd"}, {"id": 1700000001035, "type": "normal", "amount": 10000, "travel": 0, "totalAmount": 10000, "date": "2025-01-16", "note": "CT neck FNA เด็ก"}, {"id": 1700000001036, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-01-16", "note": "egd colono"}, {"id": 1700000001037, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-01-16", "note": "egd"}, {"id": 1700000001038, "type": "normal", "amount": 16000, "travel": 0, "totalAmount": 16000, "date": "2025-01-21", "note": "FESS c adenoidec"}, {"id": 1700000001039, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-01-21", "note": "EGD"}, {"id": 1700000001040, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-01-21", "note": "F&C"}, {"id": 1700000001041, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-01-21", "note": "hysteroscope"}, {"id": 1700000001042, "type": "oncall", "amount": 18000, "travel": 2000, "totalAmount": 20000, "date": "2025-01-21", "note": "Arthroscope shoulder"}, {"id": 1700000001043, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-01-22", "note": "c/s"}, {"id": 1700000001044, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-01-22", "note": "c/s"}, {"id": 1700000001045, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-01-22", "note": "excision axillary"}, {"id": 1700000001046, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-01-23", "note": "c/s"}, {"id": 1700000001047, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-01-23", "note": "c/s"}, {"id": 1700000001048, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-01-23", "note": "egd"}, {"id": 1700000001049, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-01-23", "note": "colono"}, {"id": 1700000001050, "type": "normal", "amount": 18000, "travel": 0, "totalAmount": 18000, "date": "2025-01-23", "note": "arthro shoulder"}, {"id": 1700000001051, "type": "normal", "amount": 18000, "travel": 0, "totalAmount": 18000, "date": "2025-01-23", "note": "arthro shoulder"}, {"id": 1700000001052, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-01-23", "note": "arthro knee"}, {"id": 1700000001053, "type": "oncall", "amount": 3000, "travel": 2000, "totalAmount": 5000, "date": "2025-01-24", "note": "colono"}, {"id": 1700000001054, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-01-24", "note": "egd colono"}, {"id": 1700000001055, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-01-27", "note": "c/s"}, {"id": 1700000001056, "type": "oncall", "amount": 18000, "travel": 2000, "totalAmount": 20000, "date": "2025-01-27", "note": "TKA"}, {"id": 1700000001057, "type": "oncall", "amount": 8000, "travel": 2000, "totalAmount": 10000, "date": "2025-01-27", "note": "perianal abscess"}, {"id": 1700000001058, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-01-28", "note": "c/s"}, {"id": 1700000001059, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-01-28", "note": "egd"}, {"id": 1700000001060, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-01-28", "note": "c/s"}, {"id": 1700000001061, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-03", "note": "c/s"}, {"id": 1700000001062, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-02-03", "note": "egd"}, {"id": 1700000001063, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-03", "note": "c/s"}, {"id": 1700000001064, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-03", "note": "F&C"}, {"id": 1700000001065, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-02-03", "note": "excision breast mass"}, {"id": 1700000001066, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-02-03", "note": "laser hemorrhoid"}, {"id": 1700000001067, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-02-03", "note": "scrub burn"}, {"id": 1700000001068, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-02-03", "note": "appendix"}, {"id": 1700000001069, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-02-04", "note": "egd"}, {"id": 1700000001070, "type": "normal", "amount": 7600, "travel": 0, "totalAmount": 7600, "date": "2025-02-04", "note": "lap cystec c hystero"}, {"id": 1700000001071, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-02-04", "note": "gluteal abscess"}, {"id": 1700000001072, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-02-05", "note": "hysteroscope"}, {"id": 1700000001073, "type": "oncall", "amount": 20000, "travel": 2000, "totalAmount": 22000, "date": "2025-02-05", "note": "endo C spine"}, {"id": 1700000001074, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-06", "note": "c/s"}, {"id": 1700000001075, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-06", "note": "c/s"}, {"id": 1700000001076, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-06", "note": "egd colono"}, {"id": 1700000001077, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-02-06", "note": "hysteroscope"}, {"id": 1700000001078, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-02-06", "note": "laser hemorrhoid"}, {"id": 1700000001079, "type": "oncall", "amount": 14000, "travel": 2000, "totalAmount": 16000, "date": "2025-02-07", "note": "ORIF 5th foot"}, {"id": 1700000001080, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-07", "note": "c/s"}, {"id": 1700000001081, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-02-07", "note": "egd"}, {"id": 1700000001082, "type": "normal", "amount": 13000, "travel": 0, "totalAmount": 13000, "date": "2025-02-07", "note": "hernia เด็ก"}, {"id": 1700000001083, "type": "normal", "amount": 4000, "travel": 0, "totalAmount": 4000, "date": "2025-02-09", "note": "LC"}, {"id": 1700000001084, "type": "normal", "amount": 18000, "travel": 0, "totalAmount": 18000, "date": "2025-02-09", "note": "SNAC fx"}, {"id": 1700000001085, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-09", "note": "F&C"}, {"id": 1700000001086, "type": "oncall", "amount": 18000, "travel": 2000, "totalAmount": 20000, "date": "2025-02-09", "note": "ORIF ข้อมือ"}, {"id": 1700000001087, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-02-10", "note": "hysteroscope"}, {"id": 1700000001088, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-10", "note": "c/s"}, {"id": 1700000001089, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-11", "note": "egd colono"}, {"id": 1700000001090, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-11", "note": "egd colono"}, {"id": 1700000001091, "type": "normal", "amount": 17000, "travel": 0, "totalAmount": 17000, "date": "2025-02-11", "note": "skin traction scrotal suture"}, {"id": 1700000001092, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-02-12", "note": "egd"}, {"id": 1700000001093, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-12", "note": "c/s"}, {"id": 1700000001094, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-02-12", "note": "F&C"}, {"id": 1700000001095, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-14", "note": "c/s"}, {"id": 1700000001096, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-02-14", "note": "EGD"}, {"id": 1700000001097, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-02-14", "note": "egd"}, {"id": 1700000001098, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-02-14", "note": "ganglionectomy"}, {"id": 1700000001099, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-02-17", "note": "egd colono"}, {"id": 1700000001100, "type": "normal", "amount": 16000, "travel": 0, "totalAmount": 16000, "date": "2025-02-17", "note": "LC"}, {"id": 1700000001101, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-02-17", "note": "ett ucep"}, {"id": 1700000001102, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-18", "note": "c/s"}, {"id": 1700000001103, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-02-18", "note": "egd"}, {"id": 1700000001104, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-02-18", "note": "A line"}, {"id": 1700000001105, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-02-20", "note": "hemorrhoid"}, {"id": 1700000001106, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-02-20", "note": "hysteroscope"}, {"id": 1700000001107, "type": "normal", "amount": 7000, "travel": 0, "totalAmount": 7000, "date": "2025-02-20", "note": "TLH"}, {"id": 1700000001108, "type": "normal", "amount": 9500, "travel": 0, "totalAmount": 9500, "date": "2025-02-20", "note": "laser hemorrhoid"}, {"id": 1700000001109, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-02-21", "note": "egd"}, {"id": 1700000001110, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-02-21", "note": "LC"}, {"id": 1700000001111, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-02-21", "note": "egd colono"}, {"id": 1700000001112, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-21", "note": "egd colono"}, {"id": 1700000001113, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-25", "note": "c/s"}, {"id": 1700000001114, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-02-25", "note": "egd"}, {"id": 1700000001115, "type": "normal", "amount": 13000, "travel": 0, "totalAmount": 13000, "date": "2025-02-25", "note": "ERCP"}, {"id": 1700000001116, "type": "normal", "amount": 5500, "travel": 0, "totalAmount": 5500, "date": "2025-02-25", "note": "egd colono"}, {"id": 1700000001117, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-25", "note": "egd colono"}, {"id": 1700000001118, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-02-25", "note": "DB leg"}, {"id": 1700000001119, "type": "normal", "amount": 17000, "travel": 0, "totalAmount": 17000, "date": "2025-02-25", "note": "TKA"}, {"id": 1700000001120, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-25", "note": "egd colono"}, {"id": 1700000001121, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-02-25", "note": "egd colono"}, {"id": 1700000001122, "type": "oncall", "amount": 4200, "travel": 2000, "totalAmount": 6200, "date": "2025-02-25", "note": "hysteroscope"}, {"id": 1700000001123, "type": "oncall", "amount": 4500, "travel": 2000, "totalAmount": 6500, "date": "2025-02-25", "note": "egd colono"}, {"id": 1700000001124, "type": "oncall", "amount": 20000, "travel": 2000, "totalAmount": 22000, "date": "2025-02-26", "note": "TKA"}, {"id": 1700000001125, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-02-27", "note": "c/s"}, {"id": 1700000001126, "type": "normal", "amount": 9500, "travel": 0, "totalAmount": 9500, "date": "2025-02-27", "note": "laser hemorrhoid"}, {"id": 1700000001127, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-02-27", "note": "perianal abscess"}, {"id": 1700000001128, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-03", "note": "c/s"}, {"id": 1700000001129, "type": "normal", "amount": 5500, "travel": 0, "totalAmount": 5500, "date": "2025-03-03", "note": "lap cystec"}, {"id": 1700000001130, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-03-03", "note": "hysteroscope"}, {"id": 1700000001131, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-03-03", "note": "c/s"}, {"id": 1700000001132, "type": "normal", "amount": 32500, "travel": 0, "totalAmount": 32500, "date": "2025-03-03", "note": "percut pedicular screw+AC repair+IV PCA"}, {"id": 1700000001133, "type": "oncall", "amount": 17000, "travel": 2000, "totalAmount": 19000, "date": "2025-03-03", "note": "arthroscope shoulder"}, {"id": 1700000001134, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-03-04", "note": "egd"}, {"id": 1700000001135, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-03-04", "note": "hysteroscope"}, {"id": 1700000001136, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-03-04", "note": "hysteroscope"}, {"id": 1700000001137, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-03-04", "note": "egd colono"}, {"id": 1700000001138, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-03-04", "note": "explore lap"}, {"id": 1700000001139, "type": "normal", "amount": 22000, "travel": 0, "totalAmount": 22000, "date": "2025-03-04", "note": "uBE spine"}, {"id": 1700000001140, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-03-04", "note": "egd"}, {"id": 1700000001141, "type": "oncall", "amount": 3000, "travel": 2000, "totalAmount": 5000, "date": "2025-03-05", "note": "egd bedside"}, {"id": 1700000001142, "type": "normal", "amount": 12000, "travel": 0, "totalAmount": 12000, "date": "2025-03-05", "note": "bilat lap cystectomy"}, {"id": 1700000001143, "type": "normal", "amount": 8000, "travel": 0, "totalAmount": 8000, "date": "2025-03-05", "note": "hemorrhoid"}, {"id": 1700000001144, "type": "oncall", "amount": 12000, "travel": 2000, "totalAmount": 14000, "date": "2025-03-05", "note": "fx nose"}, {"id": 1700000001145, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-03-07", "note": "c/s"}, {"id": 1700000001146, "type": "normal", "amount": 8250, "travel": 0, "totalAmount": 8250, "date": "2025-03-07", "note": "TLH c BSO"}, {"id": 1700000001147, "type": "normal", "amount": 8000, "travel": 0, "totalAmount": 8000, "date": "2025-03-07", "note": "polypectomy"}, {"id": 1700000001148, "type": "oncall", "amount": 17000, "travel": 2000, "totalAmount": 19000, "date": "2025-03-10", "note": "arthro knee"}, {"id": 1700000001149, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-03-10", "note": "egd"}, {"id": 1700000001150, "type": "normal", "amount": 7000, "travel": 0, "totalAmount": 7000, "date": "2025-03-10", "note": "egd colono ett"}, {"id": 1700000001151, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-03-10", "note": "colono"}, {"id": 1700000001152, "type": "normal", "amount": 13000, "travel": 0, "totalAmount": 13000, "date": "2025-03-10", "note": "LC"}, {"id": 1700000001153, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-11", "note": "c/s"}, {"id": 1700000001154, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-03-11", "note": "mass buttock"}, {"id": 1700000001155, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-03-12", "note": "egd"}, {"id": 1700000001156, "type": "normal", "amount": 6000, "travel": 0, "totalAmount": 6000, "date": "2025-03-12", "note": "TLH"}, {"id": 1700000001157, "type": "oncall", "amount": 11000, "travel": 2000, "totalAmount": 13000, "date": "2025-03-12", "note": "infect sx site hip"}, {"id": 1700000001158, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-03-13", "note": "egd"}, {"id": 1700000001159, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-03-13", "note": "egd"}, {"id": 1700000001160, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-13", "note": "c/s"}, {"id": 1700000001161, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-14", "note": "c/s"}, {"id": 1700000001162, "type": "normal", "amount": 5500, "travel": 2500, "totalAmount": 8000, "date": "2025-03-14", "note": "lap so"}, {"id": 1700000001163, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-03-14", "note": "excision mass shoulder"}, {"id": 1700000001164, "type": "oncall", "amount": 13000, "travel": 2000, "totalAmount": 15000, "date": "2025-03-14", "note": "infected TKA"}, {"id": 1700000001165, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-16", "note": "c/s"}, {"id": 1700000001166, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-03-16", "note": "MVA"}, {"id": 1700000001167, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-03-16", "note": "colono"}, {"id": 1700000001168, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-16", "note": "c/s"}, {"id": 1700000001169, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-03-16", "note": "c/s"}, {"id": 1700000001170, "type": "oncall", "amount": 12000, "travel": 2000, "totalAmount": 14000, "date": "2025-03-16", "note": "mass at leg"}, {"id": 1700000001171, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-03-17", "note": "egd"}, {"id": 1700000001172, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-03-17", "note": "egd"}, {"id": 1700000001173, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-03-17", "note": "TLH convert Explore"}, {"id": 1700000001174, "type": "normal", "amount": 11000, "travel": 0, "totalAmount": 11000, "date": "2025-03-17", "note": "Lap bilat cyst convert to explore"}, {"id": 1700000001175, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-03-17", "note": "MVA"}, {"id": 1700000001176, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-03-18", "note": "egd colono"}, {"id": 1700000001177, "type": "oncall", "amount": 20000, "travel": 2000, "totalAmount": 22000, "date": "2025-03-18", "note": "endospine"}, {"id": 1700000001178, "type": "normal", "amount": 8500, "travel": 0, "totalAmount": 8500, "date": "2025-03-19", "note": "hemorrhoid"}, {"id": 1700000001179, "type": "normal", "amount": 9500, "travel": 0, "totalAmount": 9500, "date": "2025-03-19", "note": "lap cystec salpingec"}, {"id": 1700000001180, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-03-20", "note": "c/s"}, {"id": 1700000001181, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-20", "note": "c/s"}, {"id": 1700000001182, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-20", "note": "c/s"}, {"id": 1700000001183, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-03-20", "note": "colono"}, {"id": 1700000001184, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-03-20", "note": "hysteroscope"}, {"id": 1700000001185, "type": "normal", "amount": 16000, "travel": 0, "totalAmount": 16000, "date": "2025-03-20", "note": "arthroscope knee"}, {"id": 1700000001186, "type": "oncall", "amount": 15000, "travel": 2000, "totalAmount": 17000, "date": "2025-03-21", "note": "lap so c F/C"}, {"id": 1700000001187, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-03-21", "note": "egd"}, {"id": 1700000001188, "type": "normal", "amount": 9500, "travel": 0, "totalAmount": 9500, "date": "2025-03-21", "note": "Laser hemorrhoid"}, {"id": 1700000001189, "type": "normal", "amount": 12450, "travel": 0, "totalAmount": 12450, "date": "2025-03-21", "note": "lap cystec myomec hystero PK"}, {"id": 1700000001190, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-03-21", "note": "egd"}, {"id": 1700000001191, "type": "normal", "amount": 18000, "travel": 0, "totalAmount": 18000, "date": "2025-03-21", "note": "lap cystec myomec"}, {"id": 1700000001192, "type": "normal", "amount": 9500, "travel": 0, "totalAmount": 9500, "date": "2025-03-26", "note": "laser hemorrhoid"}, {"id": 1700000001193, "type": "normal", "amount": 14450, "travel": 0, "totalAmount": 14450, "date": "2025-03-26", "note": "suture buttock"}, {"id": 1700000001194, "type": "normal", "amount": 14000, "travel": 0, "totalAmount": 14000, "date": "2025-03-26", "note": "lap appendix"}, {"id": 1700000001195, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-03-27", "note": "egd"}, {"id": 1700000001196, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-27", "note": "c/s"}, {"id": 1700000001197, "type": "normal", "amount": 18000, "travel": 0, "totalAmount": 18000, "date": "2025-03-27", "note": "Arthroscope shoulder"}, {"id": 1700000001198, "type": "normal", "amount": 16000, "travel": 0, "totalAmount": 16000, "date": "2025-03-27", "note": "Arthroscope knee"}, {"id": 1700000001199, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-27", "note": "c/s"}, {"id": 1700000001200, "type": "oncall", "amount": 22000, "travel": 2000, "totalAmount": 24000, "date": "2025-03-27", "note": "endoscopic spine sx"}, {"id": 1700000001201, "type": "oncall", "amount": 24000, "travel": 2000, "totalAmount": 26000, "date": "2025-03-28", "note": "radical hysterec node dissec"}, {"id": 1700000001202, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-03-28", "note": "colono"}, {"id": 1700000001203, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-03-28", "note": "hysteroscope"}, {"id": 1700000001204, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-03-28", "note": "colono"}, {"id": 1700000001205, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-03-28", "note": "colono"}, {"id": 1700000001206, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-03-28", "note": "egd colono"}, {"id": 1700000001207, "type": "normal", "amount": 3200, "travel": 3000, "totalAmount": 6200, "date": "2025-03-30", "note": "c/s"}, {"id": 1700000001208, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-30", "note": "c/s"}, {"id": 1700000001209, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-03-30", "note": "c/s"}, {"id": 1700000001210, "type": "oncall", "amount": 12000, "travel": 2000, "totalAmount": 14000, "date": "2025-03-30", "note": "remove FB GA"}, {"id": 1700000001211, "type": "oncall", "amount": 3000, "travel": 2000, "totalAmount": 5000, "date": "2025-03-30", "note": "EGD"}, {"id": 1700000001212, "type": "oncall", "amount": 2000, "travel": 2000, "totalAmount": 4000, "date": "2025-03-30", "note": "A line"}, {"id": 1700000001213, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-03-31", "note": "hysteroscope"}, {"id": 1700000001214, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-03-31", "note": "colono"}, {"id": 1700000001215, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-03-31", "note": "F&C"}, {"id": 1700000001216, "type": "normal", "amount": 10000, "travel": 0, "totalAmount": 10000, "date": "2025-03-31", "note": "ERCP"}, {"id": 1700000001217, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-01", "note": "egd colono"}, {"id": 1700000001218, "type": "normal", "amount": 7000, "travel": 0, "totalAmount": 7000, "date": "2025-04-01", "note": "colono ett"}, {"id": 1700000001219, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-04-01", "note": "egd"}, {"id": 1700000001220, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-04-01", "note": "egd"}, {"id": 1700000001221, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-04-01", "note": "egd"}, {"id": 1700000001222, "type": "normal", "amount": 10000, "travel": 0, "totalAmount": 10000, "date": "2025-04-01", "note": "BB K wire"}, {"id": 1700000001223, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-02", "note": "c/s"}, {"id": 1700000001224, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-02", "note": "c/s"}, {"id": 1700000001225, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-02", "note": "egd colono"}, {"id": 1700000001226, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-04-02", "note": "c/s"}, {"id": 1700000001227, "type": "oncall", "amount": 8000, "travel": 2000, "totalAmount": 10000, "date": "2025-04-02", "note": "perianal abscess"}, {"id": 1700000001228, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-03", "note": "c/s"}, {"id": 1700000001229, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-03", "note": "c/s"}, {"id": 1700000001230, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-03", "note": "c/s"}, {"id": 1700000001231, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-04-03", "note": "MVA"}, {"id": 1700000001232, "type": "normal", "amount": 12000, "travel": 0, "totalAmount": 12000, "date": "2025-04-03", "note": "appendectomy เด็ก"}, {"id": 1700000001233, "type": "normal", "amount": 16000, "travel": 0, "totalAmount": 16000, "date": "2025-04-03", "note": "lap SO"}, {"id": 1700000001234, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-04", "note": "F&C"}, {"id": 1700000001235, "type": "normal", "amount": 4000, "travel": 0, "totalAmount": 4000, "date": "2025-04-04", "note": "egd colono"}, {"id": 1700000001236, "type": "normal", "amount": 12000, "travel": 0, "totalAmount": 12000, "date": "2025-04-04", "note": "LC"}, {"id": 1700000001237, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-04-04", "note": "excision mass"}, {"id": 1700000001238, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-08", "note": "egd colono"}, {"id": 1700000001239, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-04-08", "note": "LC"}, {"id": 1700000001240, "type": "oncall", "amount": 20000, "travel": 2000, "totalAmount": 22000, "date": "2025-04-08", "note": "ORIF distal femur"}, {"id": 1700000001241, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-09", "note": "c/s"}, {"id": 1700000001242, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-09", "note": "c/s"}, {"id": 1700000001243, "type": "normal", "amount": 17000, "travel": 0, "totalAmount": 17000, "date": "2025-04-09", "note": "arthroscopic shoulder"}, {"id": 1700000001244, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-21", "note": "c/s"}, {"id": 1700000001245, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-04-21", "note": "dressing wound"}, {"id": 1700000001246, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-21", "note": "egd colono"}, {"id": 1700000001247, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-04-21", "note": "colono"}, {"id": 1700000001248, "type": "normal", "amount": 4000, "travel": 0, "totalAmount": 4000, "date": "2025-04-21", "note": "LC"}, {"id": 1700000001249, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-21", "note": "c/s"}, {"id": 1700000001250, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-04-21", "note": "c/s"}, {"id": 1700000001251, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-22", "note": "egd colono"}, {"id": 1700000001252, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-04-22", "note": "egd"}, {"id": 1700000001253, "type": "normal", "amount": 8000, "travel": 0, "totalAmount": 8000, "date": "2025-04-22", "note": "lap cystec"}, {"id": 1700000001254, "type": "normal", "amount": 13000, "travel": 0, "totalAmount": 13000, "date": "2025-04-22", "note": "FESS"}, {"id": 1700000001255, "type": "normal", "amount": 9000, "travel": 0, "totalAmount": 9000, "date": "2025-04-22", "note": "Debridement leg"}, {"id": 1700000001256, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-24", "note": "MVA"}, {"id": 1700000001257, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-24", "note": "F&C"}, {"id": 1700000001258, "type": "normal", "amount": 17000, "travel": 0, "totalAmount": 17000, "date": "2025-04-24", "note": "TLH"}, {"id": 1700000001259, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-24", "note": "c/s"}, {"id": 1700000001260, "type": "normal", "amount": 17000, "travel": 0, "totalAmount": 17000, "date": "2025-04-24", "note": "arthroscope knee"}, {"id": 1700000001261, "type": "oncall", "amount": 16000, "travel": 2000, "totalAmount": 18000, "date": "2025-04-28", "note": "arthro shoulder"}, {"id": 1700000001262, "type": "normal", "amount": 23800, "travel": 0, "totalAmount": 23800, "date": "2025-04-28", "note": "Endo adenotonsilectomy"}, {"id": 1700000001263, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-04-29", "note": "c/s"}, {"id": 1700000001264, "type": "normal", "amount": 4500, "travel": 0, "totalAmount": 4500, "date": "2025-04-29", "note": "egd colono"}, {"id": 1700000001265, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-04-29", "note": "egd"}, {"id": 1700000001266, "type": "normal", "amount": 8000, "travel": 0, "totalAmount": 8000, "date": "2025-04-29", "note": "Appendix"}, {"id": 1700000001267, "type": "normal", "amount": 1600, "travel": 0, "totalAmount": 1600, "date": "2025-04-30", "note": "c/s"}, {"id": 1700000001268, "type": "normal", "amount": 18000, "travel": 0, "totalAmount": 18000, "date": "2025-04-30", "note": "arthro shoulder"}, {"id": 1700000001269, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-05-01", "note": "EGD"}, {"id": 1700000001270, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-05-01", "note": "egd colono"}, {"id": 1700000001271, "type": "normal", "amount": 11000, "travel": 0, "totalAmount": 11000, "date": "2025-05-01", "note": "ovarian cystec คนท้อง"}, {"id": 1700000001272, "type": "normal", "amount": 4200, "travel": 0, "totalAmount": 4200, "date": "2025-05-01", "note": "hysteroscope"}, {"id": 1700000001273, "type": "normal", "amount": 11000, "travel": 0, "totalAmount": 11000, "date": "2025-05-01", "note": "laser hemorrhoid"}, {"id": 1700000001274, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-05-02", "note": "c/s"}, {"id": 1700000001275, "type": "normal", "amount": 11000, "travel": 0, "totalAmount": 11000, "date": "2025-05-02", "note": "BB"}, {"id": 1700000001276, "type": "oncall", "amount": 10000, "travel": 2000, "totalAmount": 12000, "date": "2025-05-05", "note": "ERCP"}, {"id": 1700000001277, "type": "oncall", "amount": 10000, "travel": 2000, "totalAmount": 12000, "date": "2025-05-05", "note": "ERCP"}, {"id": 1700000001278, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-05-05", "note": "c/s"}, {"id": 1700000001279, "type": "normal", "amount": 20000, "travel": 0, "totalAmount": 20000, "date": "2025-05-05", "note": "TLH"}, {"id": 1700000001280, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-05-05", "note": "LC"}, {"id": 1700000001281, "type": "normal", "amount": 3500, "travel": 0, "totalAmount": 3500, "date": "2025-05-05", "note": "colono"}, {"id": 1700000001282, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-05-05", "note": "c/s"}, {"id": 1700000001283, "type": "normal", "amount": 33000, "travel": 0, "totalAmount": 33000, "date": "2025-05-05", "note": "Endospine"}, {"id": 1700000001284, "type": "normal", "amount": 4000, "travel": 0, "totalAmount": 4000, "date": "2025-05-06", "note": "LC"}, {"id": 1700000001285, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-05-06", "note": "LC"}, {"id": 1700000001286, "type": "normal", "amount": 5500, "travel": 0, "totalAmount": 5500, "date": "2025-05-06", "note": "lap cystectomy"}, {"id": 1700000001287, "type": "oncall", "amount": 2500, "travel": 2000, "totalAmount": 4500, "date": "2025-05-06", "note": "egd"}, {"id": 1700000001288, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-05-06", "note": "EGD"}, {"id": 1700000001289, "type": "normal", "amount": 5000, "travel": 0, "totalAmount": 5000, "date": "2025-05-06", "note": "egd colono"}, {"id": 1700000001290, "type": "normal", "amount": 10000, "travel": 0, "totalAmount": 10000, "date": "2025-05-06", "note": "BB"}, {"id": 1700000001291, "type": "oncall", "amount": 4500, "travel": 2000, "totalAmount": 6500, "date": "2025-05-06", "note": "circum"}, {"id": 1700000001292, "type": "normal", "amount": 18000, "travel": 0, "totalAmount": 18000, "date": "2025-05-07", "note": "LC นอกpack"}, {"id": 1700000001293, "type": "normal", "amount": 2500, "travel": 0, "totalAmount": 2500, "date": "2025-05-08", "note": "egd"}, {"id": 1700000001294, "type": "normal", "amount": 3200, "travel": 0, "totalAmount": 3200, "date": "2025-05-08", "note": "c/s"}, {"id": 1700000001295, "type": "normal", "amount": 15000, "travel": 0, "totalAmount": 15000, "date": "2025-05-08", "note": "BB"}, {"id": 1700000001296, "type": "oncall", "amount": 3200, "travel": 2000, "totalAmount": 5200, "date": "2025-05-09", "note": "c/s"}, {"id": 1700000001297, "type": "normal", "amount": 3000, "travel": 0, "totalAmount": 3000, "date": "2025-05-09", "note": "egd"}, {"id": 1700000001298, "type": "normal", "amount": 13000, "travel": 0, "totalAmount": 13000, "date": "2025-05-09", "note": "LC"}, {"id": 1700000001299, "type": "normal", "amount": 8000, "travel": 0, "totalAmount": 8000, "date": "2025-05-09", "note": "c/s"}, {"id": 1700000001300, "type": "oncall", "amount": 10000, "travel": 2000, "totalAmount": 12000, "date": "2025-05-09", "note": "lap cystec"}];
+  if (existing.length < PRELOAD.length) {
+    localStorage.setItem('mtk_cases_v3', JSON.stringify(PRELOAD));
+  }
+})();
+
+document.getElementById('f-date').valueAsDate=new Date();
+document.getElementById('tax-year-lbl').textContent='ปี '+(taxYear+543);
+updateHeader();
+renderOverview();
+renderHistory();
+</script>
+</body>
+</html>
