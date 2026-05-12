@@ -156,6 +156,7 @@ header h1{font-size:15px;font-weight:500}
 <div class="tabs">
   <button class="tab active" onclick="switchTab('overview')">ภาพรวม</button>
   <button class="tab" onclick="switchTab('add')">บันทึก</button>
+  <button class="tab" onclick="switchTab('daily')">รายวัน</button>
   <button class="tab" onclick="switchTab('history')">รายการ</button>
   <button class="tab" onclick="switchTab('tax')">ภาษี</button>
 </div>
@@ -180,6 +181,20 @@ header h1{font-size:15px;font-weight:500}
     <div class="card-title">รายได้รายเดือน (12 เดือนล่าสุด)</div>
     <div class="chart-wrap"><canvas id="monthChart" role="img" aria-label="กราฟรายได้รายเดือน">กราฟ</canvas></div>
   </div>
+</div>
+
+<!-- DAILY -->
+<div id="tab-daily" class="section">
+  <div class="month-nav">
+    <button onclick="changeDay(-1)">‹</button>
+    <div class="month-label" id="daily-date-lbl"></div>
+    <button onclick="changeDay(1)">›</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">เคสวันนี้</div><div class="metric-value" id="daily-count">0</div><div class="metric-sub">รายการ</div></div>
+    <div class="metric"><div class="metric-label">รายได้วันนี้</div><div class="metric-value" id="daily-total" style="color:var(--teal)">฿0</div><div class="metric-sub" id="daily-oncall-sub"></div></div>
+  </div>
+  <div id="daily-case-list" class="case-list"></div>
 </div>
 
 <!-- ADD -->
@@ -343,16 +358,15 @@ let cases = [];
   const preload = window.CASE_DATA || [];
   let stored = [];
   try { stored = JSON.parse(localStorage.getItem('mtk_cases_v3') || '[]'); } catch(e) {}
-  // ถ้า stored มีเคสมากกว่า preload แสดงว่ามีเคสใหม่ที่กรอกเพิ่ม
   if (stored.length >= preload.length && stored.length > 0) {
     cases = stored;
   } else {
-    // ใช้ preload แล้ว save ลง localStorage
     cases = preload.slice();
     try { localStorage.setItem('mtk_cases_v3', JSON.stringify(cases)); } catch(e) {}
   }
 })();
 let viewMonth=new Date();viewMonth.setDate(1);
+let viewDay=new Date();
 let taxYear=new Date().getFullYear();
 let activeType='normal';
 let activeFilter='all';
@@ -391,12 +405,49 @@ function setType(btn){
 }
 
 function switchTab(name){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','add','history','tax'][i]===name));
-  document.querySelectorAll('.section').forEach((el,i)=>el.classList.toggle('active',['tab-overview','tab-add','tab-history','tab-tax'][i]==='tab-'+name));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','add','daily','history','tax'][i]===name));
+  document.querySelectorAll('.section').forEach((el,i)=>el.classList.toggle('active',['tab-overview','tab-add','tab-daily','tab-history','tab-tax'][i]==='tab-'+name));
   if(name==='overview')renderOverview();
   if(name==='history')renderHistory();
+  if(name==='daily')renderDaily();
   if(name==='tax')calcTax();
   if(name==='add')document.getElementById('f-date').value=todayStr();
+}
+
+function dayLabel(d){
+  const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return d.getDate()+' '+m[d.getMonth()]+' '+(d.getFullYear()+543);
+}
+function dayKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function getCasesDay(d){const k=dayKey(d);return cases.filter(c=>c.date===k);}
+function changeDay(dir){viewDay.setDate(viewDay.getDate()+dir);renderDaily();}
+
+function renderDaily(){
+  const txs=getCasesDay(viewDay).sort((a,b)=>b.id-a.id);
+  document.getElementById('daily-date-lbl').textContent=dayLabel(viewDay);
+  document.getElementById('daily-count').textContent=txs.length;
+  const total=txs.reduce((s,c)=>s+c.totalAmount,0);
+  document.getElementById('daily-total').textContent=fmt(total);
+  const oncall=txs.filter(c=>c.type==='oncall').length;
+  document.getElementById('daily-oncall-sub').textContent=oncall>0?`มีเวร ${oncall} ครั้ง`:'';
+  document.getElementById('daily-case-list').innerHTML=txs.length===0?'<div class="empty">ไม่มีเคสวันนี้</div>':
+    txs.map(c=>`
+      <div class="case-item">
+        <div class="case-top">
+          <div class="chips"><span class="chip ${TYPE_CLS[c.type]}">${TYPE_LBL[c.type]}</span></div>
+          <span class="case-date">${c.date}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <div>
+            <div class="case-amount">${fmt(c.totalAmount)}</div>
+            ${c.travel>0?`<div class="case-travel">รวมค่าเดินทาง +${fmt(c.travel)}</div>`:''}
+            ${c.note?`<div class="case-note">${c.note}</div>`:''}
+          </div>
+        </div>
+        <div class="case-actions">
+          <button class="act-btn danger" onclick="deleteCase(${c.id})">ลบ</button>
+        </div>
+      </div>`).join('');
 }
 
 function addCase(){
@@ -549,6 +600,7 @@ document.getElementById('tax-year-lbl').textContent='ปี '+(taxYear+543);
 updateHeader();
 renderOverview();
 renderHistory();
+renderDaily();
 </script>
 </body>
 </html>
