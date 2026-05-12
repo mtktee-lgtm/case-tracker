@@ -338,12 +338,20 @@ function calcProgressiveTax(net){
   return Math.round(tax);
 }
 
-let _stored = [];
-try { _stored = JSON.parse(localStorage.getItem('mtk_cases_v3') || '[]'); } catch(e) {}
-let cases = (_stored.length > 0) ? _stored : (window.CASE_DATA || []);
-if (cases === window.CASE_DATA && window.CASE_DATA) {
-  try { localStorage.setItem('mtk_cases_v3', JSON.stringify(cases)); } catch(e) {}
-}
+let cases = [];
+(function initCases() {
+  const preload = window.CASE_DATA || [];
+  let stored = [];
+  try { stored = JSON.parse(localStorage.getItem('mtk_cases_v3') || '[]'); } catch(e) {}
+  // ถ้า stored มีเคสมากกว่า preload แสดงว่ามีเคสใหม่ที่กรอกเพิ่ม
+  if (stored.length >= preload.length && stored.length > 0) {
+    cases = stored;
+  } else {
+    // ใช้ preload แล้ว save ลง localStorage
+    cases = preload.slice();
+    try { localStorage.setItem('mtk_cases_v3', JSON.stringify(cases)); } catch(e) {}
+  }
+})();
 let viewMonth=new Date();viewMonth.setDate(1);
 let taxYear=new Date().getFullYear();
 let activeType='normal';
