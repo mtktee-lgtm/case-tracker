@@ -1,185 +1,414 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>รายได้เคส + วางแผนภาษี</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="data.js"></script>
+<title>รายได้เคส + ภาษี</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Mitr:wght@300;400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
 <style>
+/* ── DESIGN TOKENS ── pastel feminine / soft clinic ── */
+:root {
+  /* layout: bottom-tab app, card-based content */
+  --bg:       #FDF8F5;
+  --bg2:      #FFF5F8;
+  --bg3:      #F9F0F4;
+  --card:     #FFFFFF;
+  --fg:       #3D2A35;
+  --fg2:      #8A6D78;
+  --fg3:      #BFA9B2;
+
+  --rose:     #E8607A;
+  --rose-lt:  #FDEEF2;
+  --rose-dk:  #B5374E;
+  --mint:     #4DBFA0;
+  --mint-lt:  #E8F8F4;
+  --mint-dk:  #277A65;
+  --peach:    #F5895A;
+  --peach-lt: #FEF0E8;
+  --peach-dk: #B5532A;
+  --lilac:    #9B7FD4;
+  --lilac-lt: #F2EDFC;
+  --lilac-dk: #5E3DAA;
+  --gold:     #D4A84B;
+  --gold-lt:  #FDF5E2;
+  --gold-dk:  #8A6315;
+
+  --border:   rgba(216,175,195,0.25);
+  --border2:  rgba(216,175,195,0.45);
+  --shadow:   0 2px 12px rgba(180,110,140,0.10);
+  --r:        12px;
+  --rl:       16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #231820; --bg2: #2C1E27; --bg3: #1C1318;
+    --card: #2E2030;
+    --fg: #F5EAF0; --fg2: #C49DB0; --fg3: #7A5E6A;
+    --rose-lt: #3D1220; --mint-lt: #0C2E25; --peach-lt: #3D2010;
+    --lilac-lt: #1E1238; --gold-lt: #2E2008;
+    --border: rgba(255,190,215,0.12); --border2: rgba(255,190,215,0.22);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #231820; --bg2: #2C1E27; --bg3: #1C1318;
+  --card: #2E2030;
+  --fg: #F5EAF0; --fg2: #C49DB0; --fg3: #7A5E6A;
+  --rose-lt: #3D1220; --mint-lt: #0C2E25; --peach-lt: #3D2010;
+  --lilac-lt: #1E1238; --gold-lt: #2E2008;
+  --border: rgba(255,190,215,0.12); --border2: rgba(255,190,215,0.22);
+  color-scheme: dark;
+}
+
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;
-  --text:#1a1a18;--text2:#6b6b66;--text3:#aaa;
-  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
-  --r:8px;--rl:12px;
-  --teal:#1D9E75;--teal-lt:#E1F5EE;--teal-dk:#0F6E56;
-  --coral:#D85A30;--coral-lt:#FAECE7;--coral-dk:#993C1D;
-  --amber:#BA7517;--amber-lt:#FAEEDA;--amber-dk:#633806;
-  --purple:#534AB7;--purple-lt:#EEEDFE;
-  --blue:#185FA5;--blue-lt:#E6F1FB;
-  --green:#3B6D11;--green-lt:#EAF3DE;
+body {
+  font-family:'Sarabun',sans-serif;
+  background:var(--bg3);
+  color:var(--fg);
+  min-height:100vh;
+  padding-bottom:80px;
 }
-@media(prefers-color-scheme:dark){
-  :root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0ede8;--text2:#999;--text3:#555;
-  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
-  --teal-lt:#0a3d2a;--coral-lt:#3d1a0a;--amber-lt:#3d2a08;--purple-lt:#1e1a47;--blue-lt:#06203d;--green-lt:#1a2e08;}
+
+/* ── HEADER ── */
+header {
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:14px 16px 12px;
+  position:sticky;
+  top:env(safe-area-inset-top,0px);
+  z-index:20;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;padding-bottom:80px}
-header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:14px 16px;position:sticky;top:0;z-index:20}
-.header-row{display:flex;justify-content:space-between;align-items:center}
-header h1{font-size:15px;font-weight:500}
-.header-sub{font-size:11px;color:var(--text2);margin-top:2px}
-.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
-.badge-warn{background:var(--coral-lt);color:var(--coral-dk)}
-.badge-ok{background:var(--teal-lt);color:var(--teal-dk)}
+.header-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.header-left{display:flex;align-items:center;gap:10px}
+.app-icon {
+  width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(135deg,#F9C5D5,#C8A4D4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(180,110,150,0.25);
+}
+header h1{font-family:'Mitr',sans-serif;font-size:15px;font-weight:500;color:var(--fg)}
+.header-sub{font-size:11px;color:var(--fg2);margin-top:1px}
+.badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500;white-space:nowrap}
+.badge-warn{background:var(--rose-lt);color:var(--rose-dk)}
+.badge-ok{background:var(--mint-lt);color:var(--mint-dk)}
 
-.tabs{display:flex;background:var(--bg);border-bottom:0.5px solid var(--border);position:sticky;top:57px;z-index:10}
-.tab{flex:1;padding:11px 2px;font-size:11px;text-align:center;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent}
-.tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+/* ── BOTTOM TABS ── */
+.tabs {
+  display:flex;
+  background:var(--card);
+  border-top:1px solid var(--border);
+  position:fixed;
+  bottom:0;left:0;right:0;
+  z-index:30;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.tab {
+  flex:1;padding:8px 2px 6px;
+  font-size:10px;text-align:center;
+  cursor:pointer;border:none;background:none;
+  color:var(--fg3);
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:color 0.2s;
+}
+.tab-icon{font-size:20px;line-height:1}
+.tab.active{color:var(--rose)}
+.tab.active .tab-bar{background:var(--rose)}
+.tab-bar{height:3px;width:24px;border-radius:3px;background:transparent;transition:background 0.2s}
 
+/* ── SECTIONS ── */
 .section{display:none;padding:14px 14px 0}.section.active{display:block}
 
-.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.metric{background:var(--bg);border-radius:var(--r);padding:12px 14px}
-.metric-label{font-size:11px;color:var(--text2);margin-bottom:3px}
-.metric-value{font-size:18px;font-weight:500}
-.metric-sub{font-size:10px;color:var(--text3);margin-top:2px}
+/* ── METRIC CARDS ── */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.metric {
+  background:var(--card);border-radius:var(--rl);
+  padding:14px 16px;
+  box-shadow:var(--shadow);
+  position:relative;overflow:hidden;
+}
+.metric::before {
+  content:'';position:absolute;top:-16px;right:-16px;
+  width:60px;height:60px;border-radius:50%;
+  background:var(--rose-lt);opacity:0.6;
+}
+.metric-label{font-size:11px;color:var(--fg2);margin-bottom:4px;position:relative}
+.metric-value{font-family:'Mitr',sans-serif;font-size:20px;font-weight:500;position:relative}
+.metric-sub{font-size:10px;color:var(--fg3);margin-top:2px;position:relative}
 .metric-full{grid-column:1/-1}
+.metric-full::before{width:80px;height:80px;top:-20px;right:-20px;background:var(--mint-lt)}
 
-.card{background:var(--bg);border-radius:var(--rl);padding:14px 16px;margin-bottom:12px;border:0.5px solid var(--border)}
-.card-title{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:12px}
-
-.form-group{margin-bottom:10px}
-.form-group label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
-.form-group input,.form-group select{width:100%;padding:10px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:14px;outline:none;font-family:inherit}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-
-.toggle-group{display:grid;gap:6px;margin-bottom:10px}
-.toggle-group.col2{grid-template-columns:1fr 1fr}
-.toggle-group.col4{grid-template-columns:repeat(4,1fr)}
-.tgl-btn{padding:9px 4px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:12px;cursor:pointer;text-align:center;line-height:1.3}
-.tgl-btn.sel-normal{background:var(--teal-lt);color:var(--teal-dk);border-color:var(--teal)}
-.tgl-btn.sel-package{background:var(--amber-lt);color:var(--amber-dk);border-color:var(--amber)}
-.tgl-btn.sel-oncall{background:var(--purple-lt);color:var(--purple);border-color:var(--purple)}
-.tgl-btn.sel-other{background:var(--bg2);color:var(--text);border-color:var(--border2)}
-
-.notice{border-radius:var(--r);padding:8px 12px;font-size:12px;margin-bottom:10px;border:0.5px solid}
-.notice-oncall{background:var(--purple-lt);color:var(--purple);border-color:var(--purple)}
-
-.btn-row{display:flex;gap:8px;margin-top:4px}
-.btn{flex:1;padding:12px;border-radius:var(--r);border:none;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
-.btn-primary{background:var(--teal-lt);color:var(--teal-dk)}
-.btn-sec{background:var(--bg2);color:var(--text2);border:0.5px solid var(--border2)}
-
+/* ── MONTH NAV ── */
 .month-nav{display:flex;align-items:center;gap:8px;margin-bottom:14px}
-.month-nav button{background:none;border:0.5px solid var(--border);border-radius:var(--r);width:30px;height:30px;cursor:pointer;color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.month-label{font-size:14px;font-weight:500;flex:1;text-align:center}
+.month-nav button {
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:10px;width:32px;height:32px;
+  cursor:pointer;color:var(--fg2);font-size:18px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:var(--shadow);transition:background 0.15s;
+}
+.month-nav button:hover{background:var(--rose-lt)}
+.month-label{font-family:'Mitr',sans-serif;font-size:15px;font-weight:500;flex:1;text-align:center;color:var(--fg)}
 
+/* ── CARD ── */
+.card {
+  background:var(--card);border-radius:var(--rl);
+  padding:16px;margin-bottom:12px;
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
+}
+.card-title {
+  font-size:12px;color:var(--fg2);font-weight:500;
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;
+}
+.card-title-icon{font-size:14px}
+
+/* ── FORM ── */
+.form-group{margin-bottom:12px}
+.form-group label{font-size:12px;color:var(--fg2);display:block;margin-bottom:5px;font-weight:500}
+.form-group input,.form-group select {
+  width:100%;padding:11px 14px;
+  border:1px solid var(--border2);border-radius:10px;
+  background:var(--bg2);color:var(--fg);
+  font-size:14px;outline:none;font-family:'Sarabun',sans-serif;
+  transition:border-color 0.15s;
+}
+.form-group input:focus{border-color:var(--rose)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── TYPE TOGGLE ── */
+.type-grid {
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;
+}
+.tgl-btn {
+  padding:12px 8px;border-radius:12px;
+  border:1.5px solid var(--border2);
+  background:var(--bg2);color:var(--fg2);
+  font-size:12px;cursor:pointer;text-align:center;line-height:1.4;
+  font-family:'Sarabun',sans-serif;
+  transition:all 0.15s;
+}
+.tgl-btn .type-emoji{font-size:18px;display:block;margin-bottom:4px}
+.tgl-btn.sel-normal{background:var(--mint-lt);color:var(--mint-dk);border-color:var(--mint)}
+.tgl-btn.sel-package{background:var(--gold-lt);color:var(--gold-dk);border-color:var(--gold)}
+.tgl-btn.sel-oncall{background:var(--lilac-lt);color:var(--lilac-dk);border-color:var(--lilac)}
+.tgl-btn.sel-other{background:var(--peach-lt);color:var(--peach-dk);border-color:var(--peach)}
+
+.notice{border-radius:10px;padding:10px 14px;font-size:12px;margin-bottom:12px;border:1px solid}
+.notice-oncall{background:var(--lilac-lt);color:var(--lilac-dk);border-color:var(--lilac)}
+
+/* ── BUTTONS ── */
+.btn-row{display:flex;gap:8px;margin-top:4px}
+.btn {
+  flex:1;padding:13px;border-radius:12px;border:none;
+  font-size:14px;font-weight:500;cursor:pointer;
+  font-family:'Sarabun',sans-serif;
+  transition:opacity 0.15s;
+}
+.btn:active{opacity:0.8}
+.btn-primary {
+  background:linear-gradient(135deg,#E8607A,#D4517A);
+  color:#fff;box-shadow:0 4px 12px rgba(232,96,122,0.35);
+}
+.btn-sec{background:var(--bg2);color:var(--fg2);border:1px solid var(--border2)}
+
+/* ── FILTER ROW ── */
 .filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.filter-btn{padding:5px 12px;border-radius:20px;border:0.5px solid var(--border);background:none;font-size:12px;cursor:pointer;color:var(--text2)}
-.filter-btn.active{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+.filter-btn {
+  padding:6px 14px;border-radius:20px;
+  border:1px solid var(--border2);background:none;
+  font-size:12px;cursor:pointer;color:var(--fg2);
+  font-family:'Sarabun',sans-serif;transition:all 0.15s;
+}
+.filter-btn.active{background:var(--rose-lt);color:var(--rose-dk);border-color:var(--rose)}
 
-.case-list{display:flex;flex-direction:column;gap:8px}
-.case-item{background:var(--bg);border-radius:var(--r);border:0.5px solid var(--border);padding:12px 14px}
+/* ── CASE LIST ── */
+.case-list{display:flex;flex-direction:column;gap:10px}
+.case-item {
+  background:var(--card);border-radius:var(--rl);
+  border:1px solid var(--border);padding:14px 16px;
+  box-shadow:var(--shadow);
+}
 .case-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .chips{display:flex;gap:5px;flex-wrap:wrap}
-.chip{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
-.chip-normal{background:var(--teal-lt);color:var(--teal-dk)}
-.chip-package{background:var(--amber-lt);color:var(--amber-dk)}
-.chip-oncall{background:var(--purple-lt);color:var(--purple)}
-.chip-other{background:var(--bg2);color:var(--text2)}
-.case-date{font-size:11px;color:var(--text3)}
-.case-amount{font-size:18px;font-weight:500;color:var(--teal)}
-.case-travel{font-size:11px;color:var(--purple);margin-top:1px}
-.case-note{font-size:12px;color:var(--text2);margin-top:4px}
-.case-actions{display:flex;gap:6px;margin-top:10px;border-top:0.5px solid var(--border);padding-top:8px}
-.act-btn{flex:1;padding:7px 4px;border-radius:var(--r);border:0.5px solid var(--border);background:none;font-size:11px;cursor:pointer;color:var(--text2)}
-.act-btn.danger{color:var(--coral-dk);border-color:var(--coral-lt)}
+.chip{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:500}
+.chip-normal{background:var(--mint-lt);color:var(--mint-dk)}
+.chip-package{background:var(--gold-lt);color:var(--gold-dk)}
+.chip-oncall{background:var(--lilac-lt);color:var(--lilac-dk)}
+.chip-other{background:var(--peach-lt);color:var(--peach-dk)}
+.case-date{font-size:11px;color:var(--fg3)}
+.case-amount{font-family:'Mitr',sans-serif;font-size:22px;font-weight:500;color:var(--mint)}
+.case-travel{font-size:11px;color:var(--lilac);margin-top:1px}
+.case-note{font-size:12px;color:var(--fg2);margin-top:4px}
+.case-actions{display:flex;gap:6px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
+.act-btn {
+  flex:1;padding:8px 4px;border-radius:10px;
+  border:1px solid var(--border);background:none;
+  font-size:11px;cursor:pointer;color:var(--fg2);
+  font-family:'Sarabun',sans-serif;
+}
+.act-btn.danger{color:var(--rose-dk);border-color:var(--rose-lt)}
 
-.stat-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
+/* ── STAT ITEMS ── */
+.stat-item {
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
 .stat-item:last-child{border-bottom:none}
-.stat-name{font-size:13px}
-.stat-detail{font-size:11px;color:var(--text2);margin-top:2px}
-.stat-amt{font-size:14px;font-weight:500;color:var(--teal)}
+.stat-amt{font-family:'Mitr',sans-serif;font-size:14px;font-weight:500;color:var(--mint)}
+.stat-detail{font-size:11px;color:var(--fg3);margin-top:2px}
+
+/* ── CHART ── */
 .chart-wrap{position:relative;width:100%;height:180px;margin-top:8px}
 
-/* TAX PLANNING */
+/* ── TAX ── */
 .tax-section{margin-bottom:16px}
-.tax-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.tax-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
 .tax-row:last-child{border-bottom:none}
-.tax-label{color:var(--text2)}
+.tax-label{color:var(--fg2)}
 .tax-value{font-weight:500}
-.tax-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:15px;font-weight:500;border-top:1px solid var(--border2);margin-top:4px}
-.deduct-item{margin-bottom:10px}
-.deduct-item label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
-.deduct-item input{width:100%;padding:9px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:14px;outline:none;font-family:inherit;text-align:right}
-.deduct-max{font-size:10px;color:var(--text3);margin-top:2px}
-.tax-result-big{text-align:center;padding:16px;background:var(--coral-lt);border-radius:var(--r);margin-bottom:12px}
-.tax-result-big .label{font-size:12px;color:var(--coral-dk);margin-bottom:4px}
-.tax-result-big .value{font-size:28px;font-weight:500;color:var(--coral-dk)}
-.tax-result-big .sub{font-size:11px;color:var(--coral-dk);opacity:0.8;margin-top:4px}
-.tax-saved{text-align:center;padding:12px;background:var(--teal-lt);border-radius:var(--r);margin-bottom:12px}
-.tax-saved .label{font-size:12px;color:var(--teal-dk);margin-bottom:4px}
-.tax-saved .value{font-size:22px;font-weight:500;color:var(--teal-dk)}
-.recommend-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.tax-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:15px;font-weight:500;border-top:1.5px solid var(--border2);margin-top:4px}
+.deduct-item{margin-bottom:12px}
+.deduct-item label{font-size:12px;color:var(--fg2);display:block;margin-bottom:5px;font-weight:500}
+.deduct-item input {
+  width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:10px;
+  background:var(--bg2);color:var(--fg);font-size:14px;outline:none;
+  font-family:'Sarabun',sans-serif;text-align:right;
+}
+.deduct-item input:focus{border-color:var(--rose)}
+.deduct-max{font-size:10px;color:var(--fg3);margin-top:3px}
+
+.tax-result-big {
+  text-align:center;padding:20px;
+  background:linear-gradient(135deg,var(--rose-lt),#FDE8EE);
+  border-radius:var(--rl);margin-bottom:12px;
+  border:1px solid rgba(232,96,122,0.2);
+  position:relative;overflow:hidden;
+}
+.tax-result-big::before {
+  content:'💸';font-size:48px;
+  position:absolute;right:-8px;bottom:-8px;opacity:0.15;
+}
+.tax-result-big .label{font-size:12px;color:var(--rose-dk);margin-bottom:4px}
+.tax-result-big .value{font-family:'Mitr',sans-serif;font-size:32px;font-weight:500;color:var(--rose-dk)}
+.tax-result-big .sub{font-size:11px;color:var(--rose-dk);opacity:0.8;margin-top:4px}
+
+.tax-saved {
+  text-align:center;padding:14px;
+  background:var(--mint-lt);border-radius:var(--rl);margin-bottom:12px;
+  border:1px solid rgba(77,191,160,0.25);
+}
+.tax-saved .label{font-size:12px;color:var(--mint-dk);margin-bottom:4px}
+.tax-saved .value{font-family:'Mitr',sans-serif;font-size:22px;font-weight:500;color:var(--mint-dk)}
+
+.recommend-item {
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px;
+}
 .recommend-item:last-child{border-bottom:none}
 .rec-name{font-weight:500}
-.rec-detail{font-size:11px;color:var(--text2);margin-top:2px}
-.rec-amt{color:var(--green);font-weight:500;white-space:nowrap;margin-left:8px}
-.progress-bar{height:6px;background:var(--bg2);border-radius:3px;margin-top:6px;overflow:hidden}
-.progress-fill{height:100%;border-radius:3px;transition:width 0.4s}
+.rec-detail{font-size:11px;color:var(--fg2);margin-top:2px}
+.rec-amt{color:var(--mint-dk);font-weight:500;white-space:nowrap;text-align:right;font-size:12px}
+.progress-bar{height:5px;background:var(--bg3);border-radius:3px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.4s;background:var(--mint)}
 
 .year-nav{display:flex;align-items:center;gap:8px;margin-bottom:14px}
-.year-nav button{background:none;border:0.5px solid var(--border);border-radius:var(--r);width:30px;height:30px;cursor:pointer;color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center}
-.year-label{font-size:14px;font-weight:500;flex:1;text-align:center}
+.year-nav button {
+  background:var(--card);border:1px solid var(--border2);border-radius:10px;
+  width:32px;height:32px;cursor:pointer;color:var(--fg2);font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+}
+.year-label{font-family:'Mitr',sans-serif;font-size:15px;font-weight:500;flex:1;text-align:center}
 
-.empty{text-align:center;color:var(--text3);font-size:13px;padding:40px 0}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--teal);color:#fff;padding:10px 24px;border-radius:24px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+.section-label {
+  font-size:10px;color:var(--fg3);font-weight:500;
+  text-transform:uppercase;letter-spacing:0.8px;
+  margin-bottom:10px;margin-top:4px;
+}
+.divider{height:1px;background:var(--border);margin:12px 0}
 
-.section-label{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:4px}
-.divider{height:0.5px;background:var(--border);margin:12px 0}
+/* ── EMPTY & TOAST ── */
+.empty{text-align:center;color:var(--fg3);font-size:13px;padding:40px 0}
+.empty-icon{font-size:36px;margin-bottom:8px}
+.toast {
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,#E8607A,#D4517A);
+  color:#fff;padding:10px 24px;border-radius:24px;
+  font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;
+  pointer-events:none;white-space:nowrap;
+  box-shadow:0 4px 16px rgba(232,96,122,0.4);
+  font-family:'Sarabun',sans-serif;
+}
+
+/* ── SECTION HERO ── */
+.section-hero {
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:14px;
+  background:var(--card);border-radius:var(--rl);
+  padding:14px 16px;border:1px solid var(--border);
+  box-shadow:var(--shadow);
+}
+.section-hero-icon{font-size:36px}
+.section-hero-text h2{font-family:'Mitr',sans-serif;font-size:16px;font-weight:500}
+.section-hero-text p{font-size:12px;color:var(--fg2);margin-top:2px}
+
+/* ── PILL TABS (overview month) ── */
+.pill-month {
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--rose-lt);color:var(--rose-dk);
+  border-radius:20px;padding:4px 14px;
+  font-size:13px;font-weight:500;
+}
 </style>
-</head>
-<body>
 
+<!-- HEADER -->
 <header>
   <div class="header-row">
-    <div>
-      <h1>รายได้เคส + ภาษี</h1>
-      <div class="header-sub" id="hdr-sub">ระบบติดตามรายได้และวางแผนภาษี</div>
+    <div class="header-left">
+      <div class="app-icon">👩‍⚕️</div>
+      <div>
+        <h1>รายได้เคส + ภาษี</h1>
+        <div class="header-sub" id="hdr-sub">กำลังโหลด…</div>
+      </div>
     </div>
     <div id="hdr-badge"></div>
   </div>
 </header>
 
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('overview')">ภาพรวม</button>
-  <button class="tab" onclick="switchTab('add')">บันทึก</button>
-  <button class="tab" onclick="switchTab('daily')">รายวัน</button>
-  <button class="tab" onclick="switchTab('history')">รายการ</button>
-  <button class="tab" onclick="switchTab('tax')">ภาษี</button>
-</div>
-
 <!-- OVERVIEW -->
 <div id="tab-overview" class="section active">
-  <div class="month-nav" style="margin-bottom:8px">
-    <button onclick="changeMonth(-1)">‹</button>
-    <div class="month-label" id="ov-month-lbl"></div>
-    <button onclick="changeMonth(1)">›</button>
+  <div style="margin-bottom:10px;display:flex;justify-content:center;align-items:center;gap:8px">
+    <button class="month-nav" style="background:var(--card);border:1px solid var(--border2);border-radius:10px;width:32px;height:32px;cursor:pointer;color:var(--fg2);font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)" onclick="changeMonth(-1)">‹</button>
+    <div class="pill-month" id="ov-month-lbl">–</div>
+    <button style="background:var(--card);border:1px solid var(--border2);border-radius:10px;width:32px;height:32px;cursor:pointer;color:var(--fg2);font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)" onclick="changeMonth(1)">›</button>
   </div>
+
   <div class="metrics">
-    <div class="metric"><div class="metric-label">เคสเดือนนี้</div><div class="metric-value" id="ov-count">0</div><div class="metric-sub">รายการ</div></div>
-    <div class="metric"><div class="metric-label">รายได้รวม</div><div class="metric-value" id="ov-total" style="color:var(--teal)">฿0</div><div class="metric-sub">เดือนนี้</div></div>
-    <div class="metric metric-full"><div class="metric-label">รายได้สะสมปีนี้ (ประมาณการ)</div><div class="metric-value" id="ov-ytd" style="color:var(--teal)">฿0</div><div class="metric-sub" id="ov-ytd-sub"></div></div>
+    <div class="metric">
+      <div class="metric-label">🏥 เคสเดือนนี้</div>
+      <div class="metric-value" id="ov-count">0</div>
+      <div class="metric-sub">รายการ</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">💰 รายได้รวม</div>
+      <div class="metric-value" id="ov-total" style="color:var(--mint)">฿0</div>
+      <div class="metric-sub">เดือนนี้</div>
+    </div>
+    <div class="metric metric-full">
+      <div class="metric-label">📊 รายได้สะสมปีนี้ (ประมาณการ)</div>
+      <div class="metric-value" id="ov-ytd" style="color:var(--mint)">฿0</div>
+      <div class="metric-sub" id="ov-ytd-sub"></div>
+    </div>
   </div>
+
   <div class="card">
-    <div class="card-title">แยกตามประเภทเคส — <span id="ov-type-month"></span></div>
+    <div class="card-title"><span class="card-title-icon">🗂️</span> แยกตามประเภทเคส — <span id="ov-type-month"></span></div>
     <div id="ov-type-list"></div>
   </div>
+
   <div class="card">
-    <div class="card-title">รายได้รายเดือน (12 เดือนล่าสุด)</div>
-    <div class="chart-wrap"><canvas id="monthChart" role="img" aria-label="กราฟรายได้รายเดือน">กราฟ</canvas></div>
+    <div class="card-title"><span class="card-title-icon">📈</span> รายได้รายเดือน (12 เดือนล่าสุด)</div>
+    <div class="chart-wrap"><canvas id="monthChart"></canvas></div>
   </div>
 </div>
 
@@ -191,38 +420,63 @@ header h1{font-size:15px;font-weight:500}
     <button onclick="changeDay(1)">›</button>
   </div>
   <div class="metrics">
-    <div class="metric"><div class="metric-label">เคสวันนี้</div><div class="metric-value" id="daily-count">0</div><div class="metric-sub">รายการ</div></div>
-    <div class="metric"><div class="metric-label">รายได้วันนี้</div><div class="metric-value" id="daily-total" style="color:var(--teal)">฿0</div><div class="metric-sub" id="daily-oncall-sub"></div></div>
+    <div class="metric">
+      <div class="metric-label">🏥 เคสวันนี้</div>
+      <div class="metric-value" id="daily-count">0</div>
+      <div class="metric-sub">รายการ</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">💰 รายได้วันนี้</div>
+      <div class="metric-value" id="daily-total" style="color:var(--mint)">฿0</div>
+      <div class="metric-sub" id="daily-oncall-sub"></div>
+    </div>
   </div>
   <div id="daily-case-list" class="case-list"></div>
 </div>
 
 <!-- ADD -->
 <div id="tab-add" class="section">
-  <div class="card">
-    <div class="card-title">ประเภทเคส</div>
-    <div class="toggle-group col4" id="type-toggle">
-      <button class="tgl-btn sel-normal" data-type="normal" onclick="setType(this)">ปกติ</button>
-      <button class="tgl-btn" data-type="package" onclick="setType(this)">แพคเกจ<br>เหมา</button>
-      <button class="tgl-btn" data-type="oncall" onclick="setType(this)">เวร<br>นอกเวลา</button>
-      <button class="tgl-btn" data-type="other" onclick="setType(this)">อื่นๆ</button>
+  <div class="section-hero">
+    <div class="section-hero-icon">✍️</div>
+    <div class="section-hero-text">
+      <h2>บันทึกเคสใหม่</h2>
+      <p>เลือกประเภท กรอกค่าตอบแทน แล้วกดบันทึก</p>
     </div>
-    <div class="notice notice-oncall" id="notice-oncall" style="display:none">เวรนอกเวลา — บวกค่าเดินทาง ฿2,000 อัตโนมัติ</div>
   </div>
+
+  <div class="card">
+    <div class="card-title"><span class="card-title-icon">🏷️</span> ประเภทเคส</div>
+    <div class="type-grid" id="type-toggle">
+      <button class="tgl-btn sel-normal" data-type="normal" onclick="setType(this)">
+        <span class="type-emoji">🩺</span>ปกติ
+      </button>
+      <button class="tgl-btn" data-type="package" onclick="setType(this)">
+        <span class="type-emoji">📦</span>แพคเกจ/เหมา
+      </button>
+      <button class="tgl-btn" data-type="oncall" onclick="setType(this)">
+        <span class="type-emoji">🌙</span>เวรนอกเวลา
+      </button>
+      <button class="tgl-btn" data-type="other" onclick="setType(this)">
+        <span class="type-emoji">📝</span>อื่นๆ
+      </button>
+    </div>
+    <div class="notice notice-oncall" id="notice-oncall" style="display:none">🚗 เวรนอกเวลา — บวกค่าเดินทาง ฿2,000 อัตโนมัติ</div>
+  </div>
+
   <div class="card">
     <div class="form-group">
-      <label>ค่าตอบแทน (บาท)</label>
+      <label>💵 ค่าตอบแทน (บาท)</label>
       <input type="number" id="f-amount" placeholder="0" min="0" inputmode="numeric">
     </div>
     <div class="form-row">
-      <div class="form-group"><label>วันที่ทำเคส</label><input type="date" id="f-date"></div>
+      <div class="form-group"><label>📅 วันที่ทำเคส</label><input type="date" id="f-date"></div>
       <div class="form-group">
-        <label>หมายเหตุ</label>
+        <label>📝 หมายเหตุ</label>
         <input type="text" id="f-note" placeholder="เช่น คลอด...">
       </div>
     </div>
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="addCase()">บันทึกเคส</button>
+      <button class="btn btn-primary" onclick="addCase()">✨ บันทึกเคส</button>
     </div>
   </div>
 </div>
@@ -236,14 +490,14 @@ header h1{font-size:15px;font-weight:500}
   </div>
   <div class="filter-row">
     <button class="filter-btn active" onclick="setFilter(this,'all')">ทั้งหมด</button>
-    <button class="filter-btn" onclick="setFilter(this,'normal')">ปกติ</button>
-    <button class="filter-btn" onclick="setFilter(this,'package')">แพคเกจ</button>
-    <button class="filter-btn" onclick="setFilter(this,'oncall')">เวร</button>
+    <button class="filter-btn" onclick="setFilter(this,'normal')">🩺 ปกติ</button>
+    <button class="filter-btn" onclick="setFilter(this,'package')">📦 แพคเกจ</button>
+    <button class="filter-btn" onclick="setFilter(this,'oncall')">🌙 เวร</button>
   </div>
   <div id="case-list" class="case-list"></div>
 </div>
 
-<!-- TAX PLANNING -->
+<!-- TAX -->
 <div id="tab-tax" class="section">
   <div class="year-nav">
     <button onclick="changeYear(-1)">‹</button>
@@ -258,12 +512,12 @@ header h1{font-size:15px;font-weight:500}
   </div>
 
   <div id="tax-saved-box" class="tax-saved" style="display:none">
-    <div class="label">ประหยัดภาษีได้จากลดหย่อน</div>
+    <div class="label">🎉 ประหยัดภาษีได้จากลดหย่อน</div>
     <div class="value" id="tax-saved-val">฿0</div>
   </div>
 
   <div class="card">
-    <div class="card-title">รายได้และค่าใช้จ่าย (40(6))</div>
+    <div class="card-title"><span class="card-title-icon">📊</span> รายได้และค่าใช้จ่าย (40(6))</div>
     <div class="tax-row"><span class="tax-label">รายได้จากเคสปีนี้</span><span class="tax-value" id="tx-income">฿0</span></div>
     <div class="tax-row"><span class="tax-label">หักค่าใช้จ่าย 60% (สูงสุด ฿300,000)</span><span class="tax-value" id="tx-expense">฿0</span></div>
     <div class="tax-row"><span class="tax-label">หักลดหย่อนส่วนตัว</span><span class="tax-value">฿60,000</span></div>
@@ -271,60 +525,88 @@ header h1{font-size:15px;font-weight:500}
     <div class="section-label">ใส่ลดหย่อนที่มี</div>
 
     <div class="deduct-item">
-      <label>ลดหย่อนบุตร (2 คน)</label>
+      <label>👨‍👧‍👦 ลดหย่อนบุตร (2 คน)</label>
       <input type="number" id="d-child" value="90000" inputmode="numeric" oninput="calcTax()">
       <div class="deduct-max">ลูกปี 59 = ฿30,000 + ลูกปี 61 = ฿60,000 (รวม ฿90,000)</div>
     </div>
     <div class="deduct-item">
-      <label>ประกันชีวิต (สูงสุด ฿100,000)</label>
+      <label>🛡️ ประกันชีวิต (สูงสุด ฿100,000)</label>
       <input type="number" id="d-life" placeholder="0" inputmode="numeric" oninput="calcTax()">
-      <div class="deduct-max" id="d-life-bar"></div>
     </div>
     <div class="deduct-item">
-      <label>ประกันสุขภาพ (สูงสุด ฿25,000)</label>
+      <label>💊 ประกันสุขภาพ (สูงสุด ฿25,000)</label>
       <input type="number" id="d-health" placeholder="0" inputmode="numeric" oninput="calcTax()">
     </div>
     <div class="deduct-item">
-      <label>ดอกเบี้ยบ้าน (สูงสุด ฿100,000)</label>
+      <label>🏠 ดอกเบี้ยบ้าน (สูงสุด ฿100,000)</label>
       <input type="number" id="d-home" placeholder="0" inputmode="numeric" oninput="calcTax()">
     </div>
     <div class="deduct-item">
-      <label>RMF (สูงสุด 30% รายได้ / ฿500,000)</label>
+      <label>📈 RMF (สูงสุด 30% รายได้ / ฿500,000)</label>
       <input type="number" id="d-rmf" placeholder="0" inputmode="numeric" oninput="calcTax()">
       <div class="deduct-max" id="d-rmf-max"></div>
     </div>
     <div class="deduct-item">
-      <label>SSF (สูงสุด 30% รายได้ / ฿200,000)</label>
+      <label>💹 SSF (สูงสุด 30% รายได้ / ฿200,000)</label>
       <input type="number" id="d-ssf" placeholder="0" inputmode="numeric" oninput="calcTax()">
     </div>
     <div class="deduct-item">
-      <label>กองทุนการออมแห่งชาติ / อื่นๆ</label>
+      <label>🏦 กองทุนการออมแห่งชาติ / อื่นๆ</label>
       <input type="number" id="d-other" placeholder="0" inputmode="numeric" oninput="calcTax()">
     </div>
 
     <div class="divider"></div>
     <div class="tax-row"><span class="tax-label">รายได้สุทธิ</span><span class="tax-value" id="tx-net">฿0</span></div>
-    <div class="tax-total-row"><span>ภาษีที่ต้องจ่าย</span><span id="tx-total" style="color:var(--coral)">฿0</span></div>
+    <div class="tax-total-row"><span>ภาษีที่ต้องจ่าย</span><span id="tx-total" style="color:var(--rose)">฿0</span></div>
   </div>
 
   <div class="card" id="recommend-card">
-    <div class="card-title">แนะนำลดหย่อนเพิ่ม (ที่ยังใช้ไม่เต็ม)</div>
+    <div class="card-title"><span class="card-title-icon">💡</span> แนะนำลดหย่อนเพิ่ม (ที่ยังใช้ไม่เต็ม)</div>
     <div id="recommend-list"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">อัตราภาษีเงินได้บุคคลธรรมดา 2567</div>
-    <div class="tax-row"><span class="tax-label">0 – 150,000</span><span class="tax-value">ยกเว้น</span></div>
+    <div class="card-title"><span class="card-title-icon">📋</span> อัตราภาษีเงินได้บุคคลธรรมดา 2567</div>
+    <div class="tax-row"><span class="tax-label">0 – 150,000</span><span class="tax-value" style="color:var(--mint-dk)">ยกเว้น</span></div>
     <div class="tax-row"><span class="tax-label">150,001 – 300,000</span><span class="tax-value">5%</span></div>
     <div class="tax-row"><span class="tax-label">300,001 – 500,000</span><span class="tax-value">10%</span></div>
     <div class="tax-row"><span class="tax-label">500,001 – 750,000</span><span class="tax-value">15%</span></div>
     <div class="tax-row"><span class="tax-label">750,001 – 1,000,000</span><span class="tax-value">20%</span></div>
     <div class="tax-row"><span class="tax-label">1,000,001 – 2,000,000</span><span class="tax-value">25%</span></div>
     <div class="tax-row"><span class="tax-label">2,000,001 – 5,000,000</span><span class="tax-value">30%</span></div>
-    <div class="tax-row"><span class="tax-label">5,000,001 ขึ้นไป</span><span class="tax-value">35%</span></div>
+    <div class="tax-row"><span class="tax-label">5,000,001 ขึ้นไป</span><span class="tax-value" style="color:var(--rose)">35%</span></div>
   </div>
 
-  <p style="font-size:11px;color:var(--text3);text-align:center;padding-bottom:16px">* ประมาณการเบื้องต้น ควรปรึกษานักบัญชีก่อนยื่นจริง</p>
+  <p style="font-size:11px;color:var(--fg3);text-align:center;padding-bottom:16px">* ประมาณการเบื้องต้น ควรปรึกษานักบัญชีก่อนยื่นจริง</p>
+</div>
+
+<!-- BOTTOM TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('overview')">
+    <span class="tab-icon">🏠</span>
+    <span>ภาพรวม</span>
+    <div class="tab-bar"></div>
+  </button>
+  <button class="tab" onclick="switchTab('add')">
+    <span class="tab-icon">✏️</span>
+    <span>บันทึก</span>
+    <div class="tab-bar"></div>
+  </button>
+  <button class="tab" onclick="switchTab('daily')">
+    <span class="tab-icon">📅</span>
+    <span>รายวัน</span>
+    <div class="tab-bar"></div>
+  </button>
+  <button class="tab" onclick="switchTab('history')">
+    <span class="tab-icon">📋</span>
+    <span>รายการ</span>
+    <div class="tab-bar"></div>
+  </button>
+  <button class="tab" onclick="switchTab('tax')">
+    <span class="tab-icon">💸</span>
+    <span>ภาษี</span>
+    <div class="tab-bar"></div>
+  </button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -346,25 +628,14 @@ const TAX_BRACKETS=[
 
 function calcProgressiveTax(net){
   let tax=0;
-  for(const b of TAX_BRACKETS){
-    if(net<=b.min)break;
-    tax+=(Math.min(net,b.max)-b.min)*b.rate;
-  }
+  for(const b of TAX_BRACKETS){if(net<=b.min)break;tax+=(Math.min(net,b.max)-b.min)*b.rate;}
   return Math.round(tax);
 }
 
-let cases = [];
-(function initCases() {
-  const preload = window.CASE_DATA || [];
-  let stored = [];
-  try { stored = JSON.parse(localStorage.getItem('mtk_cases_v3') || '[]'); } catch(e) {}
-  if (stored.length >= preload.length && stored.length > 0) {
-    cases = stored;
-  } else {
-    cases = preload.slice();
-    try { localStorage.setItem('mtk_cases_v3', JSON.stringify(cases)); } catch(e) {}
-  }
-})();
+let cases=[];
+try{cases=JSON.parse(localStorage.getItem('mtk_cases_v3')||'[]');}catch(e){cases=[];}
+if(window.CASE_DATA&&cases.length===0){cases=[...window.CASE_DATA];try{localStorage.setItem('mtk_cases_v3',JSON.stringify(cases));}catch(e){}}
+
 let viewMonth=new Date();viewMonth.setDate(1);
 let viewDay=new Date();
 let taxYear=new Date().getFullYear();
@@ -374,7 +645,6 @@ let monthChartInst=null;
 
 function save(){try{localStorage.setItem('mtk_cases_v3',JSON.stringify(cases));}catch(e){}}
 function fmt(n){return '฿'+Math.round(n).toLocaleString('th-TH');}
-function fmtN(n){return Math.round(n).toLocaleString('th-TH');}
 function monthKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 function monthLabel(d){const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return m[d.getMonth()]+' '+(d.getFullYear()+543);}
 function getCasesMonth(d){const k=monthKey(d);return cases.filter(c=>c.date.startsWith(k));}
@@ -393,19 +663,21 @@ function updateHeader(){
 
 function quickTaxEstimate(income){
   const expense=Math.min(income*0.6,300000);
-  const personal=60000;
-  const net=Math.max(0,income-expense-personal);
+  const net=Math.max(0,income-expense-60000);
   return calcProgressiveTax(net);
 }
 
 function setType(btn){
   activeType=btn.dataset.type;
-  document.querySelectorAll('#type-toggle .tgl-btn').forEach(b=>b.className='tgl-btn'+(b===btn?' sel-'+activeType:''));
+  document.querySelectorAll('#type-toggle .tgl-btn').forEach(b=>{
+    b.className='tgl-btn'+(b===btn?' sel-'+activeType:'');
+  });
   document.getElementById('notice-oncall').style.display=activeType==='oncall'?'block':'none';
 }
 
 function switchTab(name){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','add','daily','history','tax'][i]===name));
+  const tabs=['overview','add','daily','history','tax'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===name));
   document.querySelectorAll('.section').forEach((el,i)=>el.classList.toggle('active',['tab-overview','tab-add','tab-daily','tab-history','tab-tax'][i]==='tab-'+name));
   if(name==='overview')renderOverview();
   if(name==='history')renderHistory();
@@ -430,8 +702,11 @@ function renderDaily(){
   document.getElementById('daily-total').textContent=fmt(total);
   const oncall=txs.filter(c=>c.type==='oncall').length;
   document.getElementById('daily-oncall-sub').textContent=oncall>0?`มีเวร ${oncall} ครั้ง`:'';
-  document.getElementById('daily-case-list').innerHTML=txs.length===0?'<div class="empty">ไม่มีเคสวันนี้</div>':
-    txs.map(c=>`
+  const listEl=document.getElementById('daily-case-list');
+  if(txs.length===0){
+    listEl.innerHTML='<div class="empty"><div class="empty-icon">🌸</div>ไม่มีเคสวันนี้</div>';
+  } else {
+    listEl.innerHTML=txs.map(c=>`
       <div class="case-item">
         <div class="case-top">
           <div class="chips"><span class="chip ${TYPE_CLS[c.type]}">${TYPE_LBL[c.type]}</span></div>
@@ -440,34 +715,34 @@ function renderDaily(){
         <div style="display:flex;justify-content:space-between;align-items:flex-end">
           <div>
             <div class="case-amount">${fmt(c.totalAmount)}</div>
-            ${c.travel>0?`<div class="case-travel">รวมค่าเดินทาง +${fmt(c.travel)}</div>`:''}
-            ${c.note?`<div class="case-note">${c.note}</div>`:''}
+            ${c.travel>0?`<div class="case-travel">🚗 รวมค่าเดินทาง +${fmt(c.travel)}</div>`:''}
+            ${c.note?`<div class="case-note">📝 ${c.note}</div>`:''}
           </div>
         </div>
         <div class="case-actions">
-          <button class="act-btn danger" onclick="deleteCase(${c.id})">ลบ</button>
+          <button class="act-btn danger" onclick="deleteCase(${c.id})">🗑️ ลบ</button>
         </div>
       </div>`).join('');
+  }
 }
 
 function addCase(){
   const amount=parseFloat(document.getElementById('f-amount').value)||0;
   const date=document.getElementById('f-date').value;
   const note=document.getElementById('f-note').value.trim();
-  if(!amount||!date){alert('กรุณากรอกค่าตอบแทนและวันที่');return;}
+  if(!amount||!date){showToast('⚠️ กรุณากรอกค่าตอบแทนและวันที่');return;}
   const travel=activeType==='oncall'?ONCALL_TRAVEL:0;
   const totalAmount=amount+travel;
   cases.unshift({id:Date.now(),type:activeType,amount,travel,totalAmount,date,note});
   save();
   document.getElementById('f-amount').value='';
   document.getElementById('f-note').value='';
-  showToast('บันทึก '+TYPE_LBL[activeType]+' '+fmt(totalAmount)+' แล้ว ✓');
+  showToast('✨ บันทึก '+TYPE_LBL[activeType]+' '+fmt(totalAmount)+' แล้ว');
   updateHeader();
   switchTab('history');
 }
 
 function deleteCase(id){
-  if(!confirm('ลบรายการนี้?'))return;
   cases=cases.filter(c=>c.id!==id);save();renderHistory();renderOverview();updateHeader();
 }
 
@@ -498,22 +773,55 @@ function renderOverview(){
   const typeMap={};
   txs.forEach(c=>{if(!typeMap[c.type])typeMap[c.type]={total:0,count:0};typeMap[c.type].total+=c.totalAmount;typeMap[c.type].count++;});
   const entries=Object.entries(typeMap).sort((a,b)=>b[1].total-a[1].total);
-  document.getElementById('ov-type-list').innerHTML=entries.length===0?'<div class="empty">ยังไม่มีเคสเดือนนี้</div>':
-    entries.map(([t,v])=>`<div class="stat-item"><div><div><span class="chip ${TYPE_CLS[t]}">${TYPE_LBL[t]}</span></div><div class="stat-detail" style="margin-top:4px">${v.count} เคส</div></div><div class="stat-amt">${fmt(v.total)}</div></div>`).join('');
+  const typeListEl=document.getElementById('ov-type-list');
+  if(entries.length===0){
+    typeListEl.innerHTML='<div class="empty"><div class="empty-icon">🌸</div>ยังไม่มีเคสเดือนนี้</div>';
+  } else {
+    typeListEl.innerHTML=entries.map(([t,v])=>`
+      <div class="stat-item">
+        <div>
+          <span class="chip ${TYPE_CLS[t]}">${TYPE_LBL[t]}</span>
+          <div class="stat-detail" style="margin-top:4px">${v.count} เคส</div>
+        </div>
+        <div class="stat-amt">${fmt(v.total)}</div>
+      </div>`).join('');
+  }
 
   const labels=[],totals=[];
-  for(let i=11;i>=0;i--){const d=new Date(viewMonth.getFullYear(),viewMonth.getMonth()-i,1);labels.push(monthLabel(d));totals.push(getCasesMonth(d).reduce((s,c)=>s+c.totalAmount,0));}
+  for(let i=11;i>=0;i--){
+    const d=new Date(viewMonth.getFullYear(),viewMonth.getMonth()-i,1);
+    labels.push(monthLabel(d));
+    totals.push(getCasesMonth(d).reduce((s,c)=>s+c.totalAmount,0));
+  }
   const ctx=document.getElementById('monthChart').getContext('2d');
   if(monthChartInst)monthChartInst.destroy();
-  monthChartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'รายได้',data:totals,backgroundColor:'#5DCAA5',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}},y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{callback:v=>'฿'+Math.round(v/1000)+'K',font:{size:9}}}}}});
+  monthChartInst=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{
+      label:'รายได้',data:totals,
+      backgroundColor:'rgba(232,96,122,0.7)',
+      borderRadius:6,borderSkipped:false,
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9,family:'Sarabun'},maxRotation:45,color:'#BFA9B2'}},
+        y:{grid:{color:'rgba(180,120,150,0.08)'},ticks:{callback:v=>'฿'+Math.round(v/1000)+'K',font:{size:9,family:'Sarabun'},color:'#BFA9B2'}}
+      }
+    }
+  });
 }
 
 function renderHistory(){
   document.getElementById('hist-month-lbl').textContent=monthLabel(viewMonth);
   let txs=getCasesMonth(viewMonth).sort((a,b)=>b.date.localeCompare(a.date));
   if(activeFilter!=='all')txs=txs.filter(c=>c.type===activeFilter);
-  document.getElementById('case-list').innerHTML=txs.length===0?'<div class="empty">ไม่มีรายการ</div>':
-    txs.map(c=>`
+  const listEl=document.getElementById('case-list');
+  if(txs.length===0){
+    listEl.innerHTML='<div class="empty"><div class="empty-icon">🌸</div>ไม่มีรายการ</div>';
+  } else {
+    listEl.innerHTML=txs.map(c=>`
       <div class="case-item">
         <div class="case-top">
           <div class="chips"><span class="chip ${TYPE_CLS[c.type]}">${TYPE_LBL[c.type]}</span></div>
@@ -522,14 +830,15 @@ function renderHistory(){
         <div style="display:flex;justify-content:space-between;align-items:flex-end">
           <div>
             <div class="case-amount">${fmt(c.totalAmount)}</div>
-            ${c.travel>0?`<div class="case-travel">รวมค่าเดินทาง +${fmt(c.travel)}</div>`:''}
-            ${c.note?`<div class="case-note">${c.note}</div>`:''}
+            ${c.travel>0?`<div class="case-travel">🚗 รวมค่าเดินทาง +${fmt(c.travel)}</div>`:''}
+            ${c.note?`<div class="case-note">📝 ${c.note}</div>`:''}
           </div>
         </div>
         <div class="case-actions">
-          <button class="act-btn danger" onclick="deleteCase(${c.id})">ลบ</button>
+          <button class="act-btn danger" onclick="deleteCase(${c.id})">🗑️ ลบ</button>
         </div>
       </div>`).join('');
+  }
 }
 
 function calcTax(){
@@ -562,45 +871,45 @@ function calcTax(){
   document.getElementById('tax-year-lbl').textContent='ปี '+(taxYear+543);
 
   const topRate=TAX_BRACKETS.find(b=>netIncome>b.min&&netIncome<=b.max)||TAX_BRACKETS[TAX_BRACKETS.length-1];
-  document.getElementById('tax-rate-lbl').textContent='อัตราภาษีสูงสุด '+(topRate.rate*100)+'% · รายได้สุทธิ '+fmt(netIncome);
+  document.getElementById('tax-rate-lbl').textContent='อัตราสูงสุด '+(topRate.rate*100)+'% · รายได้สุทธิ '+fmt(netIncome);
 
   const savedBox=document.getElementById('tax-saved-box');
   if(taxSaved>0){savedBox.style.display='block';document.getElementById('tax-saved-val').textContent=fmt(taxSaved);}
   else savedBox.style.display='none';
 
-  // Recommendations
   const recs=[];
-  if(life<100000)recs.push({name:'ประกันชีวิต',detail:'ใช้ไป '+fmt(life)+' / สูงสุด ฿100,000',remaining:100000-life,saving:Math.round((100000-life)*0.30)});
-  if(health<25000)recs.push({name:'ประกันสุขภาพ',detail:'ใช้ไป '+fmt(health)+' / สูงสุด ฿25,000',remaining:25000-health,saving:Math.round((25000-health)*0.30)});
-  if(home<100000)recs.push({name:'ดอกเบี้ยบ้าน',detail:'ใช้ไป '+fmt(home)+' / สูงสุด ฿100,000',remaining:100000-home,saving:Math.round((100000-home)*0.30)});
-  if(rmf<rmfMax)recs.push({name:'RMF',detail:'ใช้ไป '+fmt(rmf)+' / สูงสุด '+fmt(rmfMax),remaining:rmfMax-rmf,saving:Math.round((rmfMax-rmf)*0.30)});
-  if(ssf<ssfMax)recs.push({name:'SSF',detail:'ใช้ไป '+fmt(ssf)+' / สูงสุด '+fmt(ssfMax),remaining:ssfMax-ssf,saving:Math.round((ssfMax-ssf)*0.30)});
-  recs.sort((a,b)=>b.saving-a.saving);
+  if(life<100000)recs.push({name:'🛡️ ประกันชีวิต',detail:'ใช้ไป '+fmt(life)+' / สูงสุด ฿100,000',remaining:100000-life,used:life,max:100000});
+  if(health<25000)recs.push({name:'💊 ประกันสุขภาพ',detail:'ใช้ไป '+fmt(health)+' / สูงสุด ฿25,000',remaining:25000-health,used:health,max:25000});
+  if(home<100000)recs.push({name:'🏠 ดอกเบี้ยบ้าน',detail:'ใช้ไป '+fmt(home)+' / สูงสุด ฿100,000',remaining:100000-home,used:home,max:100000});
+  if(rmf<rmfMax)recs.push({name:'📈 RMF',detail:'ใช้ไป '+fmt(rmf)+' / สูงสุด '+fmt(rmfMax),remaining:rmfMax-rmf,used:rmf,max:rmfMax});
+  if(ssf<ssfMax)recs.push({name:'💹 SSF',detail:'ใช้ไป '+fmt(ssf)+' / สูงสุด '+fmt(ssfMax),remaining:ssfMax-ssf,used:ssf,max:ssfMax});
+  recs.sort((a,b)=>b.remaining-a.remaining);
 
   const recCard=document.getElementById('recommend-card');
   const recList=document.getElementById('recommend-list');
   if(recs.length===0||income===0){recCard.style.display='none';}
   else{
     recCard.style.display='block';
-    recList.innerHTML=recs.map(r=>`
-      <div class="recommend-item">
-        <div>
+    recList.innerHTML=recs.map(r=>{
+      const pct=r.max>0?Math.round(r.used/r.max*100):0;
+      const saving=Math.round(r.remaining*0.30);
+      return `<div class="recommend-item">
+        <div style="flex:1;min-width:0">
           <div class="rec-name">${r.name}</div>
           <div class="rec-detail">${r.detail}</div>
-          <div class="progress-bar"><div class="progress-fill" style="width:${Math.round((1-r.remaining/(r.remaining+(r.name==='RMF'?rmf:r.name==='SSF'?ssf:r.name==='ประกันชีวิต'?life:r.name==='ประกันสุขภาพ'?health:home)))*100)}%;background:var(--teal)"></div></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
         </div>
-        <div class="rec-amt">ประหยัดได้<br>~${fmt(r.saving)}</div>
-      </div>`).join('');
+        <div class="rec-amt">ประหยัดได้<br>~${fmt(saving)}</div>
+      </div>`;
+    }).join('');
   }
 }
 
 // init
-document.getElementById('f-date').valueAsDate=new Date();
+document.getElementById('f-date').value=todayStr();
 document.getElementById('tax-year-lbl').textContent='ปี '+(taxYear+543);
 updateHeader();
 renderOverview();
 renderHistory();
 renderDaily();
 </script>
-</body>
-</html>
